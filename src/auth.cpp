@@ -8,7 +8,7 @@ bool auth::check_password(string password, string hash) {
     return password == hash;
 }
 
-string new_token(string login) {
+string auth::new_token(string login) {
     return login;
 }
 
