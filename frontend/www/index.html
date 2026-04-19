@@ -690,7 +690,6 @@
     <!-- ─────────────────── STUDENT: TASK DETAIL ─────────────────── -->
     <div class="page" id="pageTaskDetail">
         <main>
-            <button class="back-btn" onclick="showPage('pageStudentTasks')">Назад к заданиям</button>
 
             <div class="detail-card" id="taskDetailCard">
                 <div class="loading"><span class="spinner"></span> Загрузка…</div>
@@ -751,6 +750,49 @@
                     </div>
                 </div>
                 <div class="msg" id="gradeMsg"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ──────────────── TEACHER: TASKS PAGE ──────────────── -->
+    <div class="page" id="pageTeacherTasks">
+        <main>
+            <div class="section-header">
+                <h2>Мои задания</h2>
+                <button class="btn-primary" onclick="openTaskEditor()">Добавить задание</button>
+            </div>
+            <div id="teacherTaskTableWrap" class="table-wrap">
+                <div class="loading"><span class="spinner"></span> Загрузка заданий…</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ──────────────── TEACHER: TASK EDITOR ──────────────── -->
+    <div class="page" id="pageTaskEditor">
+        <main>
+            <div class="form-card">
+                <h4 id="taskEditorTitle">Новое задание</h4>
+                <div class="form-group">
+                    <label for="taskTitleInput">Название</label>
+                    <input type="text" id="taskTitleInput" placeholder="Введите название">
+                </div>
+                <div class="form-group">
+                    <label for="taskDescInput">Описание</label>
+                    <textarea id="taskDescInput" placeholder="Введите описание"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="taskGroupInput">Группа</label>
+                    <input type="text" id="taskGroupInput" placeholder="Введите номер группы">
+                </div>
+                <div class="form-group">
+                    <label for="taskSubjectInput">Предмет</label>
+                    <input type="text" id="taskSubjectInput" placeholder="Введите предмет">
+                </div>
+                <div class="form-row">
+                    <button class="btn-primary" id="btnSaveTask" onclick="saveTask()">Сохранить</button>
+                    <button class="btn-danger" id="btnDeleteTask" style="display:none; margin-left:1rem;" onclick="deleteTask()">Удалить</button>
+                </div>
+                <div class="msg" id="taskEditorMsg"></div>
             </div>
         </main>
     </div>
