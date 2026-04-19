@@ -1,15 +1,15 @@
 CXX=clang++
 CC=clang
 CFLAGS=-c -Wall -O3
-LDFLAGS=-lcgicc
-SOURCES=src/main.cpp
+LDFLAGS=-lcgicc -lboost_json -lboost_system -lpqxx
+SOURCES=src/main.cpp src/apihandler.cpp src/auth.cpp src/database.cpp src/enteties.cpp
 OBJECTS=${SOURCES:.cpp=.o}
-EXECUTABLE=ecampus.cgi
+EXECUTABLE=api.cgi
 
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(LDFLAGS)  $< -o $@
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@
 
 %.o: %.cpp
 	$(CXX) $(CFLAGS) $< -o $@

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-binfile=ecampus.cgi
+binfile=api.cgi
 apachefile=ecampus.conf
 sitedir=/var/www/ecampus
 
@@ -15,8 +15,8 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 install configs/$apachefile /etc/apache2/sites-available/
-ln -s /etc/apache2/sites-available/$apachefile /etc/apache2/sites-enabled/
-a2enmod cgid
+ln -sf /etc/apache2/sites-available/$apachefile /etc/apache2/sites-enabled/
+/usr/sbin/a2enmod cgid
 systemctl restart apache2
 
 mkdir -p --mode=755 $sitedir/html

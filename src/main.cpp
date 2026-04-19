@@ -1,13 +1,6 @@
-// Требования: cgicc, libpqxx, jwt-cpp, -std=c++17
 #include <boost/json/object.hpp>
 #include <boost/json/value.hpp>
 #include <boost/json/value_from.hpp>
-#include <cgicc/Cgicc.h>
-#include <cgicc/HTTPContentHeader.h>
-#include <cgicc/HTTPHTMLHeader.h>
-#include <cgicc/HTTPRedirectHeader.h>
-#include <cgicc/HTTPResponseHeader.h>
-#include <cgicc/HTTPStatusHeader.h>
 
 #include <boost/json.hpp>
 
@@ -19,7 +12,6 @@
 #include "entities.h"
 
 
-using namespace cgicc;
 using namespace std;
 
 class Ecampus {
@@ -57,7 +49,7 @@ public:
       grade_report();
       break;
     default:
-      api.send_error("Unknown api request");
+      api.send_error(500);
     }
   }
 
@@ -67,15 +59,21 @@ private:
     string login = api.get("login");
     string password = api.get("password");
 
-    User user = db.get_user_by_login(login);
+    auto u = db.get_user_by_login(login);
+    if (!u.has_value()) {
+        api.send_error(403);
+        return;
+    }
+
+    User user = u.value();
     if (!auth::check_password(user.password, password)) {
-      api.send_error("Wrong login or password");
+      api.send_error(403);
       return;
     }
 
     string token = auth::new_token(login);
     boost::json::object response = {{"token", token},
-                                    {"user", boost::json::value_from(user)}};
+                                    {"user", user.as_json()}};
     api.send(response);
   }
 
@@ -83,7 +81,7 @@ private:
     // id, role, full_name, group_number?
     User user;
     if (auth_and_load(user, ANY)) {
-      api.send(boost::json::value_from(user));
+      api.send(user.as_json());
     }
   }
 
@@ -94,7 +92,13 @@ private:
       return;
     }
     vector<Task> tasks = db.get_tasks_for(student);
-    api.send(boost::json::value_from(tasks));
+    boost::json::array res;
+    for (auto task: tasks) {
+        res.push_back(task.as_json());
+    }
+    boost::json::object t;
+    t["tasks"] = res;
+    api.send(t);
   }
 
   void show_task() {
@@ -106,8 +110,12 @@ private:
 
     size_t id = api.get_route_index();
 
-    Task task = db.get_task(id);
-    auto task_json = boost::json::value_from(task);
+    auto t = db.get_task(id);
+    if (!t.has_value()) {
+        api.send_error(404);
+    }
+    Task task = t.value();
+    auto task_json = task.as_json();
     task_json["descriprion"] = task.description;
     task_json["group_number"] = task.group_number;
 
@@ -124,35 +132,35 @@ private:
 
   void add_report() {
     // ok: true
-    api.send_error("Not implemented yet");
+    api.send_error(418);
   }
 
   void report_by_id() {
     // ok: true
-    api.send_error("Not implemented yet");
+    api.send_error(418);
   }
 
   void grade_report() {
     // ok: true
-    api.send_error("Not implemented yet");
+    api.send_error(418);
   }
 
   bool auth_and_load(User &user, Role role) {
     string token = api.get_token();
     if (!auth::check_token(token)) {
-      api.redirect_to("/login");
+      api.send_error(401);
       return false;
     }
 
     string login = auth::login_by_token(token);
 
-    if (!db.get_user_by_login(&login)) {
-      api.send_error("Error while checking user.");
+    if (!db.get_user_by_login(login)) {
+      api.send_error(500);
       return false;
     }
 
     if (!(role | user.role)) {
-      api.send_error("Not permitted.");
+      api.send_error(406);
       return false;
     }
 
@@ -170,13 +178,18 @@ string db_connection() {
 int main() {
   ApiHandler api;
 
-  string conn = db_connection();
-  Database db(conn);
-  if (db.fail()) {
-    api.send_error("Ooops :(");
-    return 0;
-  }
+  try {
+    string conn = db_connection();
+    Database db(conn);
+    if (db.fail()) {
+        api.send_error(500);
+        return 0;
+    }
 
-  Ecampus ecampus(db, api);
-  ecampus.handle();
+    Ecampus ecampus(db, api);
+    ecampus.handle();
+  } catch(std::exception &e) {
+      api.send_error(500);
+      return 0;
+  }
 }
