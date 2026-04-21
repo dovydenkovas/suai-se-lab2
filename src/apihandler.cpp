@@ -5,6 +5,7 @@
 #include <cgicc/HTTPResponseHeader.h>
 #include <cgicc/HTTPStatusHeader.h>
 #include <iostream>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -16,23 +17,34 @@ using std::cout;
 using std::endl;
 using std::string;
 
-std::string extract_bearer_token(const std::string &auth_header) {
-    if (auth_header.substr(0, 7) == "Bearer ") {
-        std::string token = auth_header.substr(7);
-        // Use your token here
-        auto l = token.find_first_not_of(" \t\r\n");
-        auto r = token.find_last_not_of(" \t\r\n");
-        if (l == std::string::npos)
-          return {};
-        return token.substr(l, r - l + 1);
-    }
+string extract_bearer_token(const string &auth_header) {
+  if (auth_header.substr(0, 7) == "Bearer ") {
+    string token = auth_header.substr(7);
+    // Use your token here
+    auto l = token.find_first_not_of(" \t\r\n");
+    auto r = token.find_last_not_of(" \t\r\n");
+    if (l == string::npos)
+      return {};
+    return token.substr(l, r - l + 1);
+  }
+  return {};
+}
+
+std::optional<std::pair<string, size_t>> try_parse_route(string route) {
+  int separator = route.rfind("/", 0);
+  string num = route.substr(separator+1);
+  size_t pos = 0;
+  size_t id = std::stoi(num, &pos);
+  if (pos != num.size())
     return {};
+  string prefix = route.substr(0, separator+1);
+  return {std::pair<string, int>{prefix, id}};
 }
 
 Request ApiHandler::request() {
   try {
     cgicc::Cgicc cgi;
-    const char* t = std::getenv("HTTP_AUTHORIZATION");
+    const char *t = std::getenv("HTTP_AUTHORIZATION");
     token = (t != nullptr) ? extract_bearer_token(t) : "";
 
     auto content_length = cgi.getEnvironment().getContentLength();
@@ -57,10 +69,42 @@ Request ApiHandler::request() {
       return HANDLED_ERROR;
     }
     req = jv.as_object();
+
+    const string route = std::getenv("PATH_INFO");
+    if (route == "/auth/login")
+      return LOGIN;
+    if (route == "/me")
+      return ME;
+    if (route == "/tasks")
+      return TASKS;
+
+    const string method = std::getenv("REQUEST_METHOD");
+    if (route == "/reports") {
+      if (method == "GET")
+        return REPORTS;
+      if (method == "POST")
+        return ADD_REPORT;
+    }
+
+    auto p = try_parse_route(route);
+    if (p.has_value()) {
+      string prefix = p->first;
+      size_t id = p->second;
+      route_index = id;
+      if (prefix == "/tasks/")
+        return TASK_BY_ID;
+      if (prefix == "/reports/") {
+        if (method == "GET")
+          return REPORTS_BY_ID;
+        if (method == "POST")
+          return GRADE_REPORT;
+      }
+    }
+
   } catch (const std::exception &e) {
-    send_error(500);
-    return HANDLED_ERROR;
   }
+  send_error(500);
+  return HANDLED_ERROR;
 }
 
 string ApiHandler::get(string key) { return req[key].as_string().c_str(); }
