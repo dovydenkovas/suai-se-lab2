@@ -10,7 +10,7 @@ using std::vector;
 
 class Database {
 private:
-    pqxx::connection conn;
+    // pqxx::connection conn;
     bool failed;
 
 public:

@@ -11,13 +11,13 @@ using std::vector;
 
 #include <pqxx/pqxx>
 
-Database::Database(string connection) : conn{connection} {
+Database::Database(string connection) /* : conn{connection}*/ {
   failed = false;
-  if (!conn.is_open()) {
+  // if (!conn.is_open()) {
     // failed = true;
-    return;
-  }
-  prepare_statements();
+    // return;
+  // }
+  // prepare_statements();
 }
 
 void Database::prepare_statements() {
@@ -95,9 +95,9 @@ void Database::prepare_statements() {
 
 optional<User> Database::get_user_by_login(string login) {
     if (login == "teacher") {
-        return User {1, login, "123", "Иван Иванович Иванов", TEACHER, {}};
+        return User {1, login, "paN8aiEIonqJE", "Иван Иванович Иванов", TEACHER, {}};
     } else if (login == "student") {
-       return User {2, login, "123", "Петр Петрович Петров", STUDENT, {}};
+       return User {2, login, "paN8aiEIonqJE", "Петр Петрович Петров", STUDENT, {}};
     } else {
         return {};
     }
