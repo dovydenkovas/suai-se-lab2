@@ -1,6 +1,7 @@
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cgicc/Cgicc.h>
 #include <cgicc/HTTPResponseHeader.h>
 #include <cgicc/HTTPStatusHeader.h>
@@ -49,17 +50,30 @@ Request ApiHandler::request() {
 
     auto content_length = cgi.getEnvironment().getContentLength();
     string body;
-    if (content_length == 0 || content_length > 10'000) {
+    if (content_length > 10'000) {
+      send_error(431);
+      return HANDLED_ERROR;
+    }
+    if (content_length == 0) {
+      content_length = 10'000;
+    }
+    body.resize(content_length);
+    cin.read(&body[0], content_length);
+    if (!cin.eof()) {
       send_error(431);
       return HANDLED_ERROR;
     }
 
-    body.resize(content_length);
-    cin.read(&body[0], content_length);
+    int i = body.find("\r\n\r\n");
+    body = body.substr(i);
+    auto l = body.find_first_of("{[");
+    auto r = body.find_last_of("}]");
+    body = body.substr(l, r - l + 1);
 
     boost::json::error_code ec;
     boost::json::value jv = boost::json::parse(body, ec);
     if (ec) {
+      std::cout << jv << std::endl;
       send_error(418);
       return HANDLED_ERROR;
     }
