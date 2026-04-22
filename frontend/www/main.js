@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════
 //  CONFIG  — Change CGI_BASE to your actual endpoint
 // ═══════════════════════════════════════════════════
-const CGI_BASE = '/cgi-bin';  // e.g. 'http://your-server/cgi-bin'
-
+const CGI_BASE = '/cgi-bin/api.cgi';
+const API_PATH = 'http://localhost:1488/proxy';
 // ── App state ──
 const state = {
     user: null,
@@ -10,7 +10,17 @@ const state = {
     currentTask: null,
     currentReport: null,
 };
-
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if token exists in localStorage (for persistent login)
+    const savedState = JSON.parse(localStorage.getItem('state') || '{}');
+    if (savedState.token) {
+        state.user = savedState.user;
+        state.token = savedState.token;
+        applySession();
+    } else {
+        showPage('pageHome');
+    }
+});
 // ═══════════════════════════════════════════════════
 //  UTILITIES
 // ═══════════════════════════════════════════════════
@@ -84,7 +94,7 @@ async function apiGet(path) {
         throw new Error('OFFLINE: Not implemented for ' + path);
     } else {
         // REAL API
-        const r = await fetch('/api' + path, {
+        const r = await fetch(API_PATH + CGI_BASE + path, {
             headers: {
                 'Authorization': `Bearer ${state.token}`
             }
@@ -148,7 +158,7 @@ async function apiPost(path, data) {
         throw new Error('OFFLINE: Not implemented for ' + path);
     } else {
         // REAL API
-        const r = await fetch('/api' + path, {
+        const r = await fetch(API_PATH + CGI_BASE + path, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -168,21 +178,25 @@ async function doLogin() {
     const login = document.getElementById('loginInput').value.trim();
     const password = document.getElementById('passwordInput').value;
 
-    if (login == 1 && password == 1) {
+    if (login == 1 && password == 1 && USE_MOCK) {
         // Quick test login for teacher
         state.user = { id: 1, full_name: 'Иван Иванов', role: 'teacher' };
+        state.token = 'mock-token-for-teacher';
+        localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
     }
-    else if (login == 2 && password == 2) {
+    else if (login == 2 && password == 2 && USE_MOCK) {
         // Quick test login for student
         state.user = { id: 2, full_name: 'Пётр Петров', role: 'student', group_number: 'Б01-001' };
+        state.token = 'mock-token-for-student';
+        localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
     }
     else {
         const data = await apiPost('/auth/login', { login, password });
         state.user = data.user;
         state.token = data.token;
+        localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
     }
-
-
+    
     applySession();
 }
 
@@ -235,7 +249,7 @@ function renderTeacherTaskTable(tasks, wrap) {
                         <td>${escHtml(t.group_number || '—')}</td>
                         <td>${escHtml(t.subject_name || '—')}</td>
                         <td>
-                            <button class="btn-small" onclick="editTask(${t.task_id})">Редактировать</button>
+                            <button class="btn-primary" onclick="editTask(${t.task_id})">Редактировать</button>
                         </td>
                     </tr>`).join('')}
             </tbody>
@@ -401,6 +415,7 @@ function doLogout() {
     document.getElementById('loginInput').value = '';
     document.getElementById('passwordInput').value = '';
     document.getElementById('authError').textContent = '';
+    localStorage.removeItem('state');
     showPage('pageHome');
 }
 
