@@ -3,7 +3,7 @@
 #include <boost/json/value_from.hpp>
 
 #include <boost/json.hpp>
-
+#include <iostream>
 #include <cstdlib>
 
 #include "apihandler.h"
@@ -66,7 +66,7 @@ private:
     }
 
     User user = u.value();
-    if (!auth::check_password(user.password, password)) {
+    if (!auth::check_password(password, user.password)) {
       api.send_error(403);
       return;
     }
@@ -177,7 +177,6 @@ string db_connection() {
 
 int main() {
   ApiHandler api;
-
   try {
     string conn = db_connection();
     Database db(conn);
