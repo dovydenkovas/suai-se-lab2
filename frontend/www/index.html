@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учебный портал</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+    <!-- ─────────────────── HEADER ─────────────────── -->
+    <header>
+        <div class="header-logo" onclick="goHome()">
+            <div class="logo-dot"></div>
+            Учебный портал
+        </div>
+
+        <div class="header-right">
+            <!-- Auth form -->
+            <div class="auth-bar" id="authBar">
+                <input class="auth-input" type="text" id="loginInput" placeholder="Логин" autocomplete="username">
+                <input class="auth-input" type="password" id="passwordInput" placeholder="Пароль"
+                    autocomplete="current-password">
+                <button class="btn-auth" onclick="doLogin()">Войти</button>
+                <span class="auth-error" id="authError"></span>
+            </div>
+            <!-- User info -->
+            <div id="userBar" style="display:none; display:flex; align-items:center; gap:0.75rem;">
+                <span class="user-chip" id="userChip"></span>
+                <button class="btn-logout" onclick="doLogout()">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ─────────────────── HOME PAGE ─────────────────── -->
+    <div class="page active" id="pageHome">
+        <main>
+            <div class="welcome-screen">
+                <h1>Добро пожаловать</h1>
+                <div class="welcome-ornament"></div>
+                <p>Войдите в систему, чтобы получить доступ к заданиям и отчётам.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─────────────────── STUDENT: TASK LIST ─────────────────── -->
+    <div class="page" id="pageStudentTasks">
+        <main>
+            <div class="section-header">
+                <h2>Мои задания</h2>
+                <span class="section-subtitle" id="studentGroupLabel"></span>
+            </div>
+            <div id="taskTableWrap" class="table-wrap">
+                <div class="loading"><span class="spinner"></span> Загрузка заданий…</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─────────────────── STUDENT: TASK DETAIL ─────────────────── -->
+    <div class="page" id="pageTaskDetail">
+        <main>
+
+            <div class="detail-card" id="taskDetailCard">
+                <div class="loading"><span class="spinner"></span> Загрузка…</div>
+            </div>
+
+            <div class="form-card" id="reportFormWrap">
+                <h4>Мой ответ</h4>
+                <div class="form-group">
+                    <label for="reportText">Текст ответа</label>
+                    <textarea id="reportText" placeholder="Введите текст вашего ответа…"></textarea>
+                </div>
+                <button class="btn-primary" id="btnSubmitReport" onclick="submitReport()">Отправить ответ</button>
+                <div class="msg" id="reportMsg"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─────────────────── TEACHER: REPORT LIST ─────────────────── -->
+    <div class="page" id="pageTeacherReports">
+        <main>
+            <div class="section-header">
+                <h2>Отчёты студентов</h2>
+                <span class="section-subtitle" id="teacherNameLabel"></span>
+            </div>
+            <div id="reportTableWrap" class="table-wrap">
+                <div class="loading"><span class="spinner"></span> Загрузка отчётов…</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─────────────────── TEACHER: REPORT DETAIL ─────────────────── -->
+    <div class="page" id="pageReportDetail">
+        <main>
+            <button class="back-btn" onclick="showPage('pageTeacherReports')">Назад к отчётам</button>
+
+            <div class="detail-card" id="reportDetailCard">
+                <div class="loading"><span class="spinner"></span> Загрузка…</div>
+            </div>
+
+            <div class="form-card">
+                <h4>Оценка и статус</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="gradeInput">Оценка (1–5)</label>
+                        <input type="number" id="gradeInput" min="1" max="5" placeholder="—">
+                    </div>
+                    <div class="form-group">
+                        <label for="statusSelect">Статус</label>
+                        <select id="statusSelect">
+                            <option value="SENT">Отправлен</option>
+                            <option value="ACCEPTED">Принят</option>
+                            <option value="REJECTED">Отклонён</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:0;">
+                        <label>&nbsp;</label>
+                        <button class="btn-primary" onclick="saveReportGrade()">Сохранить</button>
+                    </div>
+                </div>
+                <div class="msg" id="gradeMsg"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ──────────────── TEACHER: TASKS PAGE ──────────────── -->
+    <div class="page" id="pageTeacherTasks">
+        <main>
+            <div class="section-header">
+                <h2>Мои задания</h2>
+                <button class="btn-primary" onclick="openTaskEditor()">Добавить задание</button>
+            </div>
+            <div id="teacherTaskTableWrap" class="table-wrap">
+                <div class="loading"><span class="spinner"></span> Загрузка заданий…</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ──────────────── TEACHER: TASK EDITOR ──────────────── -->
+    <div class="page" id="pageTaskEditor">
+        <main>
+            <div class="form-card">
+                <h4 id="taskEditorTitle">Новое задание</h4>
+                <div class="form-group">
+                    <label for="taskTitleInput">Название</label>
+                    <input type="text" id="taskTitleInput" placeholder="Введите название">
+                </div>
+                <div class="form-group">
+                    <label for="taskDescInput">Описание</label>
+                    <textarea id="taskDescInput" placeholder="Введите описание"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="taskGroupInput">Группа</label>
+                    <input type="text" id="taskGroupInput" placeholder="Введите номер группы">
+                </div>
+                <div class="form-group">
+                    <label for="taskSubjectInput">Предмет</label>
+                    <input type="text" id="taskSubjectInput" placeholder="Введите предмет">
+                </div>
+                <div class="form-row">
+                    <button class="btn-primary" id="btnSaveTask" onclick="saveTask()">Сохранить</button>
+                    <button class="btn-primary" id="btnDeleteTask" style="display:none; margin-left:1rem; background-color: var(--danger); " onclick="deleteTask()">Удалить 
+                    </button>
+                </div>
+                <div class="msg" id="taskEditorMsg"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ─────────────────── JAVASCRIPT ─────────────────── -->
+    <script src="main.js"></script>
+    </script>
+</body>
+
+</html>
