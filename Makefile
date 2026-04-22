@@ -1,8 +1,8 @@
 CXX=clang++
 CC=clang
-CFLAGS=-c -Wall -O3
-LDFLAGS=-lcgicc -lboost_json -lboost_system -lpqxx
-SOURCES=src/main.cpp src/apihandler.cpp src/auth.cpp src/database.cpp src/enteties.cpp
+CFLAGS=-c -Wall -O3 -g
+LDFLAGS=-lcgicc -lboost_json -lboost_system -lpqxx -lcrypt
+SOURCES=src/apihandler.cpp src/auth.cpp src/database.cpp src/enteties.cpp src/main.cpp
 OBJECTS=${SOURCES:.cpp=.o}
 EXECUTABLE=api.cgi
 
