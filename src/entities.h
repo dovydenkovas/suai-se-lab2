@@ -15,7 +15,7 @@ enum Role { ANY = 3, TEACHER = 1, STUDENT = 2 };
 
 // Вспомогательные структуры
 struct User {
-  int id;
+  size_t id;
   string login;
   string password;
   string full_name;
@@ -26,8 +26,12 @@ struct User {
 };
 
 struct Report {
-  enum { SENT, ACCEPTED } status;
-  int grade;
+  size_t id;
+  size_t task_id;
+  size_t student_id;
+  string text;
+  size_t grade;
+	enum { SENT, ACCEPTED } status;
 
   boost::json::object as_json();
 };
@@ -35,7 +39,7 @@ struct Report {
 struct Task {
   size_t id;
   string group_number;
-  string teacher;
+  size_t teacher;
   string subject;
 
   string title;

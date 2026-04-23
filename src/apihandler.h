@@ -33,4 +33,5 @@ public:
 
   void send(boost::json::object response, size_t err=200);
   void send_error(size_t err);
+  void send_ok();
 };

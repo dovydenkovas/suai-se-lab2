@@ -201,3 +201,13 @@ void ApiHandler::send_error(size_t err) {
   resp["ok"] = false;
   send(resp, err);
 }
+
+void ApiHandler::send_ok() {
+  if (responsed) {
+    return;
+  }
+
+  boost::json::object resp;
+  resp["ok"] = true;
+  send(resp);
+}

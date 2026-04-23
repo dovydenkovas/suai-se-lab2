@@ -1,16 +1,16 @@
+#include <algorithm>
 #include <boost/json/object.hpp>
 #include <boost/json/value.hpp>
 #include <boost/json/value_from.hpp>
 
 #include <boost/json.hpp>
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 
 #include "apihandler.h"
 #include "auth.h"
 #include "database.h"
 #include "entities.h"
-
 
 using namespace std;
 
@@ -61,8 +61,8 @@ private:
 
     auto u = db.get_user_by_login(login);
     if (!u.has_value()) {
-        api.send_error(403);
-        return;
+      api.send_error(403);
+      return;
     }
 
     User user = u.value();
@@ -72,8 +72,7 @@ private:
     }
 
     string token = auth::new_token(login);
-    boost::json::object response = {{"token", token},
-                                    {"user", user.as_json()}};
+    boost::json::object response = {{"token", token}, {"user", user.as_json()}};
     api.send(response);
   }
 
@@ -93,8 +92,8 @@ private:
     }
     vector<Task> tasks = db.get_tasks_for(student);
     boost::json::array res;
-    for (auto task: tasks) {
-        res.push_back(task.as_json());
+    for (auto task : tasks) {
+      res.push_back(task.as_json());
     }
     boost::json::object t;
     t["tasks"] = res;
@@ -102,7 +101,8 @@ private:
   }
 
   void show_task() {
-    // {id, title, description, subject, teacher, group_number, report?{id, text,
+    // {id, title, description, subject, teacher, group_number, report?{id,
+    // text,
     User student;
     if (!auth_and_load(student, STUDENT)) {
       return;
@@ -112,7 +112,7 @@ private:
 
     auto t = db.get_task(id);
     if (!t.has_value()) {
-        api.send_error(404);
+      api.send_error(404);
     }
     Task task = t.value();
     auto task_json = task.as_json();
@@ -128,16 +128,90 @@ private:
     if (!auth_and_load(teacher, TEACHER)) {
       return;
     }
+
+    vector<Report> reports = db.get_reports_for(teacher);
+    boost::json::array res;
+    for (auto r : reports) {
+      auto report = r.as_json();
+      report["student"] = r.student;
+      if (r.task_id) {
+        auto task = *db.get_task(r.task_id);
+
+        report["task"] = {
+            {"title", task.title},
+            {"description", task.description},
+        };
+
+        report["subject"] = task.subject;
+        report["group"] = task.group_number;
+      }
+
+      res.push_back(report);
+    }
+    boost::json::object t;
+    t["reports"] = res;
+    api.send(t);
   }
 
   void add_report() {
     // ok: true
-    api.send_error(418);
+    User student;
+    if (!auth_and_load(student, STUDENT)) {
+      return;
+    }
+
+    size_t task_id = api.get_int("task_id");
+    string text = api.get("text");
+
+    auto tasks = db.get_tasks_for(student);
+    auto t_it = find_if(tasks.begin(), tasks.end(),
+                        [task_id](Task t) { return t.id == task_id; });
+    if (t_it == tasks.end()) {
+      api.send(406);
+      return;
+    }
+    Task task = *t_it;
+
+    if (task.report && task.report->status == Report::ACCEPTED) {
+      api.send(406);
+      return;
+    }
+
+    Report report = Report{0, task_id, student.id, text, 0, Report::SENT};
+    db.insert_report(report);
+    api.send_ok();
   }
 
   void report_by_id() {
     // ok: true
-    api.send_error(418);
+    User teacher;
+    if (!auth_and_load(teacher, TEACHER)) {
+      return;
+    }
+
+    auto r = db.get_report(api.get_route_index());
+    if (!r) {
+      api.send_error(418);
+      return;
+    }
+
+    Report report = *r;
+    Task task = *db.get_task(report.task_id);
+
+    if (task.teacher != teacher.id) {
+      api.send_error(406);
+      return;
+    }
+
+    User student = *db.get_user(report.student_id);
+
+    auto jo = report.as_json();
+    jo["text"] = report.text;
+    jo["task"] = {{"title", task.title}, {"description", task.description}};
+    jo["subject"] = task.subject;
+    jo["student"] = {{"id", report.student_id}, {"full_name", student.full_name}};
+    jo["group"] = task.group_number;
+    api.send(jo);
   }
 
   void grade_report() {
@@ -181,14 +255,14 @@ int main() {
     string conn = db_connection();
     Database db(conn);
     if (db.fail()) {
-        api.send_error(500);
-        return 0;
+      api.send_error(500);
+      return 0;
     }
 
     Ecampus ecampus(db, api);
     ecampus.handle();
-  } catch(std::exception &e) {
-      api.send_error(500);
-      return 0;
+  } catch (std::exception &e) {
+    api.send_error(500);
+    return 0;
   }
 }
