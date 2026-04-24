@@ -110,6 +110,13 @@ Request ApiHandler::request() {
         return ADD_REPORT;
     }
 
+    if (route == "/teacher/tasks") {
+      if (method == "GET")
+        return SHOW_TEACHER_TASKS;
+      else
+        return ADD_TASK;
+    }
+
     auto p = try_parse_route(route);
     if (p.has_value()) {
       string prefix = p->first;
@@ -122,6 +129,9 @@ Request ApiHandler::request() {
           return REPORTS_BY_ID;
         if (method == "POST")
           return GRADE_REPORT;
+      }
+      if (prefix == "/teacher/tasks/") {
+        return SHOW_TEACHER_TASK;
       }
     }
 
