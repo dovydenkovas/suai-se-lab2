@@ -432,7 +432,7 @@ string db_connection() {
 
 void init_logging() {
   boost::log::add_file_log(
-      boost::log::keywords::file_name = "var/www/ecampus/log_%N.log",
+      boost::log::keywords::file_name = "/tmp/ecampus-log_%N.log",
       boost::log::keywords::rotation_size = 5 * 1024 * 1024,
       boost::log::keywords::max_size = 3 * 5 * 1024 * 1024,
       boost::log::keywords::format = "[%TimeStamp%] <%Severity%> %Message%");

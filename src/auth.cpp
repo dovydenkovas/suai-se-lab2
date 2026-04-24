@@ -31,7 +31,7 @@ Record auth_cache;
 
 bool auth::check_password(const string &password, const string &hash) {
   BOOST_LOG_TRIVIAL(trace) << "Password: " << password
-                           << "Hash: " << auth::hash_password(password);
+                           << " Hash: " << auth::hash_password(password);
   return auth::hash_password(password) == hash.c_str();
 }
 
