@@ -1,7 +1,8 @@
+#include <boost/algorithm/string.hpp>
 #include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
-#include <boost/algorithm/string.hpp>
+#include <boost/log/trivial.hpp>
 #include <cgicc/Cgicc.h>
 #include <cgicc/HTTPResponseHeader.h>
 #include <cgicc/HTTPStatusHeader.h>
@@ -33,24 +34,26 @@ string extract_bearer_token(const string &auth_header) {
 
 std::optional<std::pair<string, size_t>> try_parse_route(string route) {
   int separator = route.rfind("/", 0);
-  string num = route.substr(separator+1);
+  string num = route.substr(separator + 1);
   size_t pos = 0;
   size_t id = std::stoi(num, &pos);
   if (pos != num.size())
     return {};
-  string prefix = route.substr(0, separator+1);
+  string prefix = route.substr(0, separator + 1);
   return {std::pair<string, int>{prefix, id}};
 }
 
 Request ApiHandler::request() {
+  BOOST_LOG_TRIVIAL(debug) << "Handle request";
   try {
+    BOOST_LOG_TRIVIAL(debug) << "Parse header";
     cgicc::Cgicc cgi;
     const char *t = std::getenv("HTTP_AUTHORIZATION");
     token = (t != nullptr) ? extract_bearer_token(t) : "";
-
     auto content_length = cgi.getEnvironment().getContentLength();
     string body;
     if (content_length > 10'000) {
+      BOOST_LOG_TRIVIAL(debug) << "Too large content_length";
       send_error(431);
       return HANDLED_ERROR;
     }
@@ -60,10 +63,14 @@ Request ApiHandler::request() {
     body.resize(content_length);
     cin.read(&body[0], content_length);
     if (!cin.eof()) {
+      BOOST_LOG_TRIVIAL(debug) << "Too large body";
       send_error(431);
       return HANDLED_ERROR;
     }
 
+
+    BOOST_LOG_TRIVIAL(debug) << "parse body";
+    BOOST_LOG_TRIVIAL(debug) << body;
     int i = body.find("\r\n\r\n");
     body = body.substr(i);
     auto l = body.find_first_of("{[");
@@ -73,18 +80,21 @@ Request ApiHandler::request() {
     boost::json::error_code ec;
     boost::json::value jv = boost::json::parse(body, ec);
     if (ec) {
+      BOOST_LOG_TRIVIAL(error) << "Fail to parse json: " << body;
       std::cout << jv << std::endl;
       send_error(418);
       return HANDLED_ERROR;
     }
 
     if (!jv.is_object()) {
+      BOOST_LOG_TRIVIAL(error) << "Json is not object: " << jv;
       send_error(418);
       return HANDLED_ERROR;
     }
     req = jv.as_object();
 
     const string route = std::getenv("PATH_INFO");
+    BOOST_LOG_TRIVIAL(debug) << "parse routes: " << route;
     if (route == "/auth/login")
       return LOGIN;
     if (route == "/me")
@@ -181,7 +191,7 @@ string reason_for(int code) {
   return (it != reason_map.end()) ? it->second : string("Status");
 }
 
-void ApiHandler::send(boost::json::object response, size_t err) {
+void ApiHandler::send(boost::json::value response, size_t err) {
   if (responsed) {
     return;
   }

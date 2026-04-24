@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <boost/log/trivial.hpp>
 #include <chrono>
 #include <crypt.h>
 #include <cstdio>
@@ -23,12 +24,14 @@ struct Record {
   std::chrono::system_clock::time_point expires;
 };
 
-const std::chrono::seconds TTL = std::chrono::seconds(24*3600);
+const std::chrono::seconds TTL = std::chrono::seconds(24 * 3600);
 const char DELIMETER = ';';
 const string tokens_path = "/tmp/tokens.db";
 Record auth_cache;
 
 bool auth::check_password(const string &password, const string &hash) {
+  BOOST_LOG_TRIVIAL(trace) << "Password: " << password
+                           << "Hash: " << auth::hash_password(password);
   return auth::hash_password(password) == hash.c_str();
 }
 
@@ -141,7 +144,7 @@ string auth::login_by_token(const string &token) {
 void auth::remove_token(const string &token) {
   auto records = load_all();
   auto it = std::remove_if(records.begin(), records.end(),
-                      [&](const Record &r) { return r.token == token; });
+                           [&](const Record &r) { return r.token == token; });
   if (it != records.end()) {
     records.erase(it, records.end());
     store_all(records);

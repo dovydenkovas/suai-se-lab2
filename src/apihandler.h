@@ -31,7 +31,7 @@ public:
   size_t get_route_index();
   string get_token();
 
-  void send(boost::json::object response, size_t err=200);
+  void send(boost::json::value response, size_t err=200);
   void send_error(size_t err);
   void send_ok();
 };
