@@ -25,7 +25,6 @@ boost::json::object User::as_json() {
   boost::json::object obj;
   obj["id"] = id;
   obj["login"] = login;
-  obj["password"] = password;
   obj["full_name"] = full_name;
   obj["role"] = role_as_json(role);
   if (group_number)

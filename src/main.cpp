@@ -60,6 +60,18 @@ public:
       BOOST_LOG_TRIVIAL(debug) << "grade report page";
       grade_report();
       break;
+    case Request::SHOW_TEACHER_TASKS:
+      BOOST_LOG_TRIVIAL(debug) << "show teacher tasks";
+      show_teacher_tasks();
+      break;
+    case Request::SHOW_TEACHER_TASK:
+      BOOST_LOG_TRIVIAL(debug) << "show teacher task";
+      show_teacher_task();
+      break;
+    case Request::ADD_TASK:
+      BOOST_LOG_TRIVIAL(debug) << "add task";
+      add_task();
+      break;
     default:
       BOOST_LOG_TRIVIAL(error) << "Unknown request";
       api.send_error(500);
@@ -187,9 +199,7 @@ private:
 
       res.push_back(report);
     }
-    boost::json::object t;
-    t["reports"] = res;
-    api.send(t);
+    api.send(res);
   }
 
   /**
@@ -432,7 +442,8 @@ string db_connection() {
 
 void init_logging() {
   boost::log::add_file_log(
-      boost::log::keywords::file_name = "/tmp/ecampus-log_%N.log",
+      boost::log::keywords::file_name = "/srv/ecampus-log_%N.log",
+      boost::log::keywords::open_mode = std::ios_base::app,
       boost::log::keywords::rotation_size = 5 * 1024 * 1024,
       boost::log::keywords::max_size = 3 * 5 * 1024 * 1024,
       boost::log::keywords::format = "[%TimeStamp%] <%Severity%> %Message%");
@@ -443,6 +454,7 @@ void init_logging() {
 
 int main() {
   init_logging();
+  BOOST_LOG_TRIVIAL(trace) << "BEGIN";
   ApiHandler api;
   try {
     string conn = db_connection();
@@ -456,7 +468,7 @@ int main() {
     Ecampus ecampus(db, api);
     ecampus.handle();
   } catch (std::exception &e) {
-    BOOST_LOG_TRIVIAL(error) << "Unexpected global exception.";
+    BOOST_LOG_TRIVIAL(error) << "Unexpected global exception: " << e.what();
     api.send_error(500);
     return 0;
   }

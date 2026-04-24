@@ -26,7 +26,7 @@ struct Record {
 
 const std::chrono::seconds TTL = std::chrono::seconds(24 * 3600);
 const char DELIMETER = ';';
-const string tokens_path = "/tmp/tokens.db";
+const string tokens_path = "/srv/tokens.db";
 Record auth_cache;
 
 bool auth::check_password(const string &password, const string &hash) {
