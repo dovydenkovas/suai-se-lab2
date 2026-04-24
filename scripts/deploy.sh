@@ -17,8 +17,11 @@ fi
 install configs/$apachefile /etc/apache2/sites-available/
 ln -sf /etc/apache2/sites-available/$apachefile /etc/apache2/sites-enabled/
 /usr/sbin/a2enmod cgid
+/usr/sbin/a2enmod headers
+/usr/sbin/a2enmod rewrite
 systemctl restart apache2
 
+chown www-data /srv
 mkdir -p --mode=755 $sitedir/html
 mkdir -p --mode=755 $sitedir/cgi-bin
 install -m 644 html/index.html $sitedir/html
