@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════
 const CGI_BASE = '/cgi-bin/api.cgi';
 const API_PATH = 'http://localhost:1488/proxy';
+// const API_PATH = 'http://atuin.space:8888';
 // ── App state ──
 const state = {
     user: null,
@@ -65,7 +66,7 @@ const mock = {
 let mockTaskId = 3;
 
 // Переключатель: true — использовать mock, false — реальное API
-let USE_MOCK = true;
+let USE_MOCK = false;
 
 async function apiGet(path) {
     if (USE_MOCK) {
@@ -105,6 +106,7 @@ async function apiGet(path) {
 }
 
 async function apiPost(path, data) {
+    console.log(data)
     if (USE_MOCK) {
         // OFFLINE MOCKS
         if (path === '/teacher/tasks') {
@@ -158,6 +160,8 @@ async function apiPost(path, data) {
         throw new Error('OFFLINE: Not implemented for ' + path);
     } else {
         // REAL API
+        console.log(state.token);
+        
         const r = await fetch(API_PATH + CGI_BASE + path, {
             method: 'POST',
             headers: {
@@ -167,6 +171,14 @@ async function apiPost(path, data) {
             body: JSON.stringify(data),
         });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        console.log({
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify(data),
+        });
         return r.json();
     }
 }
@@ -194,6 +206,7 @@ async function doLogin() {
         const data = await apiPost('/auth/login', { login, password });
         state.user = data.user;
         state.token = data.token;
+        console.log("respond:" + data.token)
         localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
     }
     
@@ -208,7 +221,7 @@ function applySession() {
         state.user.full_name + (state.user.role === 'student' ? ' (студент)' : state.user.role === 'teacher' ? ' (преподаватель)' : 'неизвестная роль)');
 
     if (state.user.role === 'student') loadStudentTasks();
-    else loadTeacherTasks();
+    else if(state.user.role === 'teacher') loadTeacherTasks();
 }
 // ═══════════════════════════════════════════════════
 //  TEACHER — TASKS PAGE
