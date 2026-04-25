@@ -27,7 +27,7 @@ public:
   Ecampus(Database &db, ApiHandler &api) : db(db), api(api) {}
 
   void handle() {
-    switch (api.request()) {
+    switch (api.get_request()) {
     case Request::LOGIN:
       BOOST_LOG_TRIVIAL(debug) << "login page";
       login();
