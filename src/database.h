@@ -10,14 +10,13 @@ using std::vector;
 
 class Database {
 private:
-  // pqxx::connection conn;
+  pqxx::connection conn;
   bool failed;
 
 public:
   Database(string connection);
 
   std::optional<User> get_user_by_login(string login);
-  std::optional<User> get_user(size_t id);
   vector<Task> get_tasks_for(const User &student);
   vector<Task> get_tasks_from(const User &teacher);
   vector<Report> get_reports_for(const User &teacher);
