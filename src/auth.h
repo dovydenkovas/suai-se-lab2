@@ -1,7 +1,14 @@
 #pragma once
 #include <string>
+#include <chrono>
 
 using std::string;
+
+struct Record {
+  string token;
+  string login;
+  std::chrono::system_clock::time_point expires;
+};
 
 namespace auth {
     bool check_password(const string &password, const string &hash);

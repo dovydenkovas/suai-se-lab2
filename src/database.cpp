@@ -21,76 +21,7 @@ Database::Database(string connection) /* : conn{connection}*/ {
 }
 
 void Database::prepare_statements() {
-  // pqxx::work txn(conn);
-  // txn.conn().prepare("find_student",
-  //                    "SELECT s.student_id, s.full_name, s.user_password, "
-  //                    "g.group_number FROM student s JOIN study_group g ON "
-  //                    "s.group_id=g.group_id WHERE s.user_login = $1");
-  // txn.conn().prepare("find_teacher",
-  //                    "SELECT teacher_id, full_name, user_password FROM teacher "
-  //                    "WHERE user_login = $1");
-  // // Для student_tasks используем group_number
-  // txn.conn().prepare(
-  //     "student_tasks",
-  //     "SELECT t.task_id, t.title, s.name as subject_name, tr.full_name as "
-  //     "teacher_name "
-  //     "FROM task t JOIN subject s ON t.subject_id=s.subject_id JOIN teacher tr "
-  //     "ON t.teacher_id=tr.teacher_id "
-  //     "JOIN study_group g ON t.group_id=g.group_id WHERE g.group_number = $1");
-  // txn.conn().prepare(
-  //     "teacher_tasks",
-  //     "SELECT t.task_id, t.title, s.name as subject_name, tr.full_name as "
-  //     "teacher_name "
-  //     "FROM task t JOIN subject s ON t.subject_id=s.subject_id JOIN teacher tr "
-  //     "ON t.teacher_id=tr.teacher_id WHERE t.teacher_id = $1");
-  // txn.conn().prepare(
-  //     "get_report_for_student",
-  //     "SELECT r.report_id, r.text, r.status::text as status, r.grade FROM "
-  //     "report r WHERE r.task_id=$1 AND r.student_id=$2");
-  // txn.conn().prepare(
-  //     "task_by_id",
-  //     "SELECT t.title, t.description, s.name as subject_name, tr.full_name as "
-  //     "teacher_name, g.group_number "
-  //     "FROM task t JOIN subject s ON t.subject_id=s.subject_id JOIN teacher tr "
-  //     "ON t.teacher_id=tr.teacher_id JOIN study_group g ON "
-  //     "t.group_id=g.group_id WHERE t.task_id=$1");
-  // txn.conn().prepare(
-  //     "insert_report",
-  //     "INSERT INTO report(task_id, student_id, text) VALUES($1,$2,$3)");
-  // txn.conn().prepare(
-  //     "teacher_reports",
-  //     "SELECT r.report_id, t.title as task_title, s.name as subject_name, "
-  //     "st.full_name as student_name, g.group_number, r.status::text as status, "
-  //     "r.grade "
-  //     "FROM report r JOIN task t ON r.task_id=t.task_id JOIN subject s ON "
-  //     "t.subject_id=s.subject_id JOIN student st ON r.student_id=st.student_id "
-  //     "JOIN study_group g ON st.group_id=g.group_id WHERE t.teacher_id=$1");
-  // txn.conn().prepare(
-  //     "student_reports",
-  //     "SELECT r.report_id, t.title as task_title, s.name as subject_name, "
-  //     "st.full_name as student_name, g.group_number, r.status::text as status, "
-  //     "r.grade "
-  //     "FROM report r JOIN task t ON r.task_id=t.task_id JOIN subject s ON "
-  //     "t.subject_id=s.subject_id JOIN student st ON r.student_id=st.student_id "
-  //     "JOIN study_group g ON st.group_id=g.group_id WHERE r.student_id=$1");
-  // txn.conn().prepare(
-  //     "report_by_id",
-  //     "SELECT r.text, r.status::text as status, r.grade, t.title as "
-  //     "task_title, t.description as task_description, s.name as subject_name, "
-  //     "st.full_name as student_name, g.group_number, t.teacher_id "
-  //     "FROM report r JOIN task t ON r.task_id=t.task_id JOIN subject s ON "
-  //     "t.subject_id=s.subject_id JOIN student st ON r.student_id=st.student_id "
-  //     "JOIN study_group g ON st.group_id=g.group_id WHERE r.report_id=$1");
-  // txn.conn().prepare("report_owner_check",
-  //                    "SELECT t.teacher_id FROM report r JOIN task t ON "
-  //                    "r.task_id=t.task_id WHERE r.report_id=$1");
-  // txn.conn().prepare("update_report_status_grade",
-  //                    "UPDATE report SET status = $1::report_status, grade = $2 "
-  //                    "WHERE report_id = $3");
-  // txn.conn().prepare("update_report_status",
-  //                    "UPDATE report SET status = $1::report_status, grade = "
-  //                    "NULL WHERE report_id = $2");
-  // txn.commit();
+
 }
 
 optional<User> Database::get_user_by_login(string login) {

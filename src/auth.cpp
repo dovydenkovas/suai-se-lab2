@@ -18,11 +18,6 @@ using std::optional;
 using std::string;
 using std::vector;
 
-struct Record {
-  string login;
-  string token;
-  std::chrono::system_clock::time_point expires;
-};
 
 const std::chrono::seconds TTL = std::chrono::seconds(24 * 3600);
 const char DELIMETER = ';';
@@ -30,6 +25,7 @@ const string tokens_path = "/srv/tokens.db";
 Record auth_cache;
 
 bool auth::check_password(const string &password, const string &hash) {
+  BOOST_LOG_TRIVIAL(debug) << "=== check password ===";
   BOOST_LOG_TRIVIAL(trace) << "Password: " << password
                            << " Hash: " << auth::hash_password(password);
   return auth::hash_password(password) == hash.c_str();
@@ -54,8 +50,10 @@ optional<Record> parse_line(const string &line) {
   try {
     time_t epoch = static_cast<time_t>(stoll(epoch_str));
     Record r{token, login, std::chrono::system_clock::from_time_t(epoch)};
+    BOOST_LOG_TRIVIAL(trace) << "parsed line => " << r.token << " || " << r.login;
     return r;
   } catch (...) {
+    BOOST_LOG_TRIVIAL(trace) << "FAIL TO PARSE => " << line;
     return {};
   }
 }
@@ -67,6 +65,7 @@ string serialize(const Record &rec) {
 }
 
 vector<Record> load_all() {
+  BOOST_LOG_TRIVIAL(debug) << "== Load tokens ==";
   vector<Record> out;
   std::ifstream in(tokens_path);
   if (!in)
@@ -81,6 +80,7 @@ vector<Record> load_all() {
 }
 
 void store_all(const vector<Record> &vec) {
+  BOOST_LOG_TRIVIAL(debug) << "== Store tokens ==";
   string tmp = tokens_path + ".tmp";
   std::ofstream out(tmp, std::ios::trunc);
   if (!out)
@@ -108,23 +108,30 @@ string make_token() {
 }
 
 string auth::new_token(const string &login) {
+  BOOST_LOG_TRIVIAL(debug) << "== New token ==";
   Record rec;
   rec.token = make_token();
   rec.login = login;
   rec.expires = std::chrono::system_clock::now() + TTL;
 
-  auto records = load_all();
+  vector<Record> records = load_all();
   records.push_back(std::move(rec));
+
+  for (auto &record : records) {
+    BOOST_LOG_TRIVIAL(trace) << "record => " << record.token << " || " << record.login;
+  }
+
   store_all(records);
   return records.back().token;
 }
 
 bool auth::check_token(const string &token) {
+  BOOST_LOG_TRIVIAL(debug) << "== Check token ==";
+  BOOST_LOG_TRIVIAL(trace) << "Token: " << token;
   auto records = load_all();
-  auto now = std::chrono::system_clock::now();
-
   for (const auto &r : records) {
-    if (r.token == token && r.expires > now)
+    BOOST_LOG_TRIVIAL(trace) << "is it == " << r.token << " ?";
+    if (r.token == token)
       return true;
   }
   return false;
@@ -132,10 +139,9 @@ bool auth::check_token(const string &token) {
 
 string auth::login_by_token(const string &token) {
   auto records = load_all();
-  auto now = std::chrono::system_clock::now();
 
   for (const auto &r : records) {
-    if (r.token == token && r.expires > now)
+    if (r.token == token)
       return r.login;
   }
   return {};

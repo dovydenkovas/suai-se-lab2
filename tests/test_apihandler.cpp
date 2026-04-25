@@ -1,10 +1,7 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE ApiHandlerTest
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/unit_test.hpp>
 #include "../src/apihandler.h"
 
-
+#define BOOST_TEST_MODULE ApiHandlerTest
 BOOST_AUTO_TEST_SUITE(TryParseRoute)
 BOOST_AUTO_TEST_CASE(Simple) {
   auto res = internal::try_parse_route("/simple/32");
