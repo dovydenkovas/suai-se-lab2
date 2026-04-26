@@ -28,6 +28,7 @@ struct User {
 struct Report {
   size_t id;
   size_t task_id;
+  string student_name;
   size_t student_id;
   string text;
   size_t grade;
@@ -38,12 +39,12 @@ struct Report {
 
 struct Task {
   size_t id;
-  string group_number;
-  size_t teacher;
-  string subject;
-
   string title;
   string description;
+
+  string subject;
+  User teacher;
+  string group_number;
   optional<Report> report;
 
   boost::json::object as_json();

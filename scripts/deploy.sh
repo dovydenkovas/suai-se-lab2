@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 binfile=api.cgi
 apachefile=ecampus.conf
@@ -15,10 +15,13 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 install configs/$apachefile /etc/apache2/sites-available/
+source .env
+sed -i /etc/apache2/sites-available/$apachefile -e "s|DB_CONNECTION_SECRET|'$DB_CONNECTION_SECRET'|"
+
 ln -sf /etc/apache2/sites-available/$apachefile /etc/apache2/sites-enabled/
-/usr/sbin/a2enmod cgid
-/usr/sbin/a2enmod headers
-/usr/sbin/a2enmod rewrite
+/usr/sbin/a2enmod cgid 2> /dev/null
+/usr/sbin/a2enmod headers 2> /dev/null
+/usr/sbin/a2enmod rewrite 2> /dev/null
 systemctl restart apache2
 
 chown www-data /srv

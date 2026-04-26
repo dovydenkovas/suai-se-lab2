@@ -154,6 +154,11 @@ void Ecampus::show_task() {
   task_json["descriprion"] = task.description;
   task_json["group_number"] = task.group_number;
 
+  if (task.report) {
+    task_json["report"].as_object()["id"] = task.report->id;
+    task_json["report"].as_object()["text"] = task.report->text;
+  }
+
   api.send(task_json);
 }
 
@@ -173,11 +178,12 @@ void Ecampus::show_reports() {
   boost::json::array res;
   for (auto r : reports) {
     auto report = r.as_json();
-    report["student"] = r.student_id;
+    report["student"] = {{"id", r.student_id}, {"full_name", r.student_name}};
     if (r.task_id) {
       auto task = *db.get_task(r.task_id);
 
       report["task"] = {
+          {"id", task.id},
           {"title", task.title},
           {"description", task.description},
       };
@@ -222,7 +228,14 @@ void Ecampus::add_report() {
     return;
   }
 
-  Report report = Report{0, task_id, student.id, text, 0, Report::SENT};
+  Report report;
+  report.id = 0;
+  report.task_id = task_id;
+  report.student_id = student.id;
+  report.student_name = student.full_name;
+  report.text = text;
+  report.grade = 0;
+  report.status = Report::SENT;
   db.insert_report(report);
   api.send_ok();
 }
@@ -250,17 +263,18 @@ void Ecampus::report_by_id() {
   Report report = *r;
   Task task = *db.get_task(report.task_id);
 
-  if (task.teacher != teacher.id) {
+  if (task.teacher.id != teacher.id) {
     BOOST_LOG_TRIVIAL(warning)
         << "Teacher " << teacher.id << " want to access to task "
-        << task.teacher << ", but has no perms.";
+        << task.teacher.full_name << ", but has no perms.";
     api.send_error(406);
     return;
   }
 
-  User student = *db.get_user(report.student_id);
+  User student = *db.get_student(report.student_id);
 
   auto jo = report.as_json();
+  jo["id"] = report.id;
   jo["text"] = report.text;
   jo["task"] = {{"title", task.title}, {"description", task.description}};
   jo["subject"] = task.subject;
@@ -348,7 +362,7 @@ void Ecampus::show_teacher_task() {
     return;
   }
   auto task = *t;
-  if (task.teacher != teacher.id) {
+  if (task.teacher.id != teacher.id) {
     BOOST_LOG_TRIVIAL(debug)
         << "User " << teacher.id << " try to access teacher page of " << task_id
         << " task.";
@@ -376,14 +390,14 @@ void Ecampus::add_task() {
     return;
   }
 
-  Task task{0,
-            api.get("group_number"),
-            teacher.id,
-            api.get("subject"),
-            api.get("title"),
-            api.get("description"),
-            {}};
-
+  Task task;
+  task.id = 0;
+  task.group_number = api.get("group_number");
+  task.teacher = teacher;
+  task.subject = api.get("subject");
+  task.title = api.get("title");
+  task.description = api.get("description");
+  task.report = {};
   db.insert_task(task);
   api.send_ok();
 }

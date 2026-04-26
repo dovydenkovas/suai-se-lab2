@@ -8,7 +8,6 @@
 #include "database.h"
 #include "ecampus.h"
 
-
 using std::string;
 
 string db_connection() {
@@ -47,7 +46,11 @@ int main() {
     ecampus.handle();
   } catch (std::exception &e) {
     BOOST_LOG_TRIVIAL(error) << "Unexpected global exception: " << e.what();
-    api.send_error(500);
+    api.send_error(501);
+    return 0;
+  } catch (...) {
+    BOOST_LOG_TRIVIAL(error) << "Some critical shit was happened";
+    api.send_error(501);
     return 0;
   }
 }

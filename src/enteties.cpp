@@ -35,7 +35,7 @@ boost::json::object User::as_json() {
 boost::json::object Task::as_json() {
   boost::json::object obj;
   obj["id"] = id;
-  obj["teacher"] = teacher;
+  obj["teacher"] = teacher.full_name;
   obj["subject"] = subject;
   obj["title"] = title;
   if (report.has_value()) {
