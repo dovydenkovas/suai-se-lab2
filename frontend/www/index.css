@@ -44,7 +44,7 @@
             color: var(--ink);
             min-height: 100vh;
             line-height: 1.6;
-            background-image: url('img_nature_wide.jpg');
+            background-image: url('background.jpg');
             backdrop-filter: blur(10px);
             background-size: cover;
             background-position: center;

@@ -161,7 +161,7 @@ async function apiPost(path, data) {
     } else {
         // REAL API
         console.log(state.token);
-        
+
         const r = await fetch(API_PATH + CGI_BASE + path, {
             method: 'POST',
             headers: {
@@ -170,6 +170,9 @@ async function apiPost(path, data) {
             },
             body: JSON.stringify(data),
         });
+        console.log('Response status:', r.status);
+        let res = await r.json();
+        res.status = r.status;
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         console.log({
             method: 'POST',
@@ -179,7 +182,7 @@ async function apiPost(path, data) {
             },
             body: JSON.stringify(data),
         });
-        return r.json();
+        return res;
     }
 }
 
@@ -203,13 +206,20 @@ async function doLogin() {
         localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
     }
     else {
-        const data = await apiPost('/auth/login', { login, password });
-        state.user = data.user;
-        state.token = data.token;
-        console.log("respond:" + data.token)
-        localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
+        try {
+            const data = await apiPost('/auth/login', { login, password });
+            state.user = data.user;
+            state.token = data.token;
+            console.log("respond:");
+            console.log(data.status);
+            console.log(data.statusLabel);
+            localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
+        } catch (e) {
+            setMsg('authError', 'Неверный логин или пароль.', 'err');
+            return;
+        }
     }
-    
+
     applySession();
 }
 
@@ -221,7 +231,7 @@ function applySession() {
         state.user.full_name + (state.user.role === 'student' ? ' (студент)' : state.user.role === 'teacher' ? ' (преподаватель)' : 'неизвестная роль)');
 
     if (state.user.role === 'student') loadStudentTasks();
-    else if(state.user.role === 'teacher') loadTeacherTasks();
+    else if (state.user.role === 'teacher') loadTeacherTasks();
 }
 // ═══════════════════════════════════════════════════
 //  TEACHER — TASKS PAGE
@@ -285,35 +295,127 @@ async function showTaskAnswers(taskId) {
     }
     // Сохраняем taskId для возврата
     showTaskAnswers._lastTaskId = taskId;
-    // Формируем HTML с выпадающим меню для статуса
+    // Формируем HTML с выпадающим меню для статуса и полем для оценки
     card.innerHTML = `
-      <h3>${escHtml(task.title || 'Задание #' + taskId)}</h3>
-      <div class="detail-meta">
-        <span>📚 ${escHtml(task.subject_name || '—')}</span>
-        <span>🎓 Группа: ${escHtml(task.group_number || '—')}</span>
-      </div>
-      <div class="detail-body">${escHtml(task.description || '(описание отсутствует)')}</div>
-      <div class="divider"></div>
-      <h4>Ответы студентов</h4>
-      ${answers.length === 0 ? '<div class="empty-state"><p>Ответов пока нет.</p></div>' :
-            answers.map((a, idx) => `
-          <div class="answer-block" style="margin-bottom:1.5rem;">
-            <div style="font-size:0.97rem;"><b>${escHtml(a.student_name || a.teacher_name || 'Студент')}</b> ${a.status ? badgeHtml(a.status) : (a.report_status ? badgeHtml(a.report_status) : '')}</div>
-            <div style="margin:0.5rem 0 0.5rem 0; color:var(--ink-soft); white-space:pre-wrap;">${escHtml(a.text || a.report_text || '(нет текста)')}</div>
-            ${(a.grade != null ? `<span class=\"grade-badge\">${a.grade}</span>` : (a.report_grade != null ? `<span class=\"grade-badge\">${a.report_grade}</span>` : ''))}
-            <div style="margin-top:0.5rem;">
-              <label for="statusSelect_${idx}" style="font-size:0.88rem; color:var(--ink-faint); margin-right:0.5rem;">Статус:</label>
-              <select id="statusSelect_${idx}" data-answer-idx="${idx}" onchange="onChangeAnswerStatus(${taskId}, ${idx}, this.value)">
-                <option value="SENT" ${(a.status === 'SENT' || a.status === undefined || a.status === null) ? 'selected' : ''}>Отправлен</option>
-                <option value="ACCEPTED" ${a.status === 'ACCEPTED' ? 'selected' : ''}>Принят</option>
-                <option value="REJECTED" ${a.status === 'REJECTED' ? 'selected' : ''}>Не принят</option>
-              </select>
+        <h3>${escHtml(task.title || 'Задание #' + taskId)}</h3>
+        <div class="detail-meta">
+            <span>📚 ${escHtml(task.subject_name || '—')}</span>
+            <span>🎓 Группа: ${escHtml(task.group_number || '—')}</span>
+        </div>
+        <div class="detail-body">${escHtml(task.description || '(описание отсутствует)')}</div>
+        <div class="divider"></div>
+        <h4>Ответы студентов</h4>
+        ${answers.length === 0 ? '<div class="empty-state"><p>Ответов пока нет.</p></div>' :
+                answers.map((a, idx) => `
+            <div class="answer-block" style="margin-bottom:1.5rem; line-height: 1.8;">
+                <div style="font-size:0.97rem; margin-bottom: 0.75rem;"><b>${escHtml(a.student?.full_name || a.student_name || 'Студент')}</b> ${a.status ? badgeHtml(a.status) : ''}</div>
+                <div style="margin:0.75rem 0; color:var(--ink-soft); white-space:pre-wrap; line-height: 1.8;">${escHtml(a.text || a.report_text || '(нет текста)')}</div>
+                <div style="margin-top:1rem; line-height: 1.8;">
+                <label for="statusSelect_${idx}" style="font-size:0.88rem; color:var(--ink-faint); margin-right:0.5rem; display: block; margin-bottom: 0.5rem;">Статус:</label>
+                <select id="statusSelect_${idx}" data-answer-idx="${idx}"
+                    onchange="document.getElementById('gradeWrapper_${idx}').style.display = this.value === 'REJECTED' || this.value === '' ? 'none' : 'inline-flex';">
+                    <option value="" >Выбрать статус</option>
+                    <option value="ACCEPTED" ${a.status === 'ACCEPTED' ? 'selected' : ''}>Принят</option>
+                    <option value="REJECTED" ${a.status === 'REJECTED' ? 'selected' : ''}>Не принят</option>
+                </select>
+                <span id="gradeWrapper_${idx}" style="display: ${a.status === 'REJECTED' || a.status === 'SENT' ? 'none' : 'inline-flex'}; align-items:center; margin-left:1rem; margin-top: 0.75rem;">
+                    <label for="gradeInput_${idx}" style="font-size:0.88rem; color:var(--ink-faint); margin-right:0.5rem; margin-top: 0.75rem;">Оценка:</label>
+                    <input type="number" id="gradeInput_${idx}" value="${a.grade ?? ''}" min="0" max="100" style="width:4rem;">
+                </span>
+                </div>
+                <button class="btn-primary" onclick="onApplyAnswerChange(${taskId}, ${idx})" style="margin-top:1rem;">Изменить</button>
             </div>
-          </div>
-        `).join('')}
+            `).join('')}
     `;
     // Скрыть форму ответа для преподавателя
     document.getElementById('reportFormWrap').style.display = 'none';
+}
+
+// Новая функция для применения изменений при нажатии кнопки
+window.onApplyAnswerChange = async function (taskId, idx) {
+    const statusSelect = document.getElementById(`statusSelect_${idx}`);
+    const gradeInput = document.getElementById(`gradeInput_${idx}`);
+    const newStatus = statusSelect.value;
+    const newGrade = gradeInput.value;
+
+    if (!newStatus) {
+        alert('Выберите статус перед изменением.');
+        return;
+    }
+
+    if (USE_MOCK) {
+        // В mock-режиме меняем статус и оценку в mock.studentTasks
+        let answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+        if (answers[idx]) {
+            answers[idx].report_status = newStatus;
+            answers[idx].report_grade = newGrade;
+        }
+        // Перерисовать
+        showTaskAnswers(taskId);
+    } else {
+        // В реальном API — отправить POST /api/reports/{report_id} {status, grade}
+        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answer = answers[idx];
+        if (answer && answer.report_id) {
+            const resp = await apiPost(`/reports/${answer.report_id}`, { status: newStatus, grade: newGrade });
+            console.log('Update report response:', resp);
+            // Перерисовать
+            showTaskAnswers(taskId);
+        }
+        else {
+            alert('Ошибка: не найден отчёт для этого ответа.');
+        }
+    }
+}
+
+// Обработчик изменения статуса ответа
+window.onChangeAnswerStatus = async function (taskId, idx, newStatus) {
+    const gradeInput = document.getElementById(`gradeInput_${idx}`);
+    const grade = gradeInput ? gradeInput.value : null;
+    if (USE_MOCK) {
+        // В mock-режиме меняем статус и оценку в mock.studentTasks
+        const answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+        if (answers[idx]) {
+            answers[idx].report_status = newStatus;
+            answers[idx].report_grade = grade;
+        }
+        // Перерисовать
+        showTaskAnswers(taskId);
+    } else {
+        // В реальном API — отправить POST /api/reports/{report_id} {status, grade}
+        // Нужно знать report_id, предполагаем что answers[idx].report_id есть
+        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answer = answers[idx];
+        if (answer && answer.report_id) {
+            await apiPost(`/reports/${answer.report_id}`, { status: newStatus, grade: grade });
+            // Перерисовать
+            showTaskAnswers(taskId);
+        }
+    }
+}
+
+// Обработчик изменения оценки
+window.onChangeGrade = async function (taskId, idx, newGrade) {
+    const statusSelect = document.getElementById(`statusSelect_${idx}`);
+    const status = statusSelect ? statusSelect.value : null;
+    if (USE_MOCK) {
+        // В mock-режиме меняем оценку в mock.studentTasks
+        const answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+        if (answers[idx]) {
+            answers[idx].report_grade = newGrade;
+        }
+        // Перерисовать
+        showTaskAnswers(taskId);
+    } else {
+        // В реальном API — отправить POST /api/reports/{report_id} {status, grade}
+        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answer = answers[idx];
+        if (answer && answer.report_id) {
+            await apiPost(`/reports/${answer.report_id}`, { status: status, grade: newGrade });
+            // Перерисовать
+            showTaskAnswers(taskId);
+        }
+    }
 }
 
 // Обработчик изменения статуса ответа
@@ -388,12 +490,22 @@ async function saveTask() {
     try {
         if (editingTaskId) {
             // POST /teacher/tasks/:id (edit)
-            await apiPost(`/teacher/tasks/${editingTaskId}`, { title, description, group_number, subject_name });
-            setMsg('taskEditorMsg', 'Задание обновлено!', 'ok');
+            const resp = await apiPost(`/teacher/tasks/${editingTaskId}`, { title, description, group_number, subject_name });
+            if (resp.status === 201) {
+                setMsg('taskEditorMsg', 'Задание обновлено!', 'ok');
+            }
+            else {
+                setMsg('taskEditorMsg', 'Ошибка при добавлении задания. Проверьте данные.', 'err');
+            }
         } else {
             // POST /teacher/tasks (create)
-            await apiPost('/teacher/tasks', { title, description, group_number, subject_name });
-            setMsg('taskEditorMsg', 'Задание добавлено!', 'ok');
+            const resp = await apiPost('/teacher/tasks', { title, description, group_number, subject_name });
+            if (resp.status === 201) {
+                setMsg('taskEditorMsg', 'Задание добавлено!', 'ok');
+            }
+            else {
+                setMsg('taskEditorMsg', 'Ошибка при добавлении задания. Проверьте данные.', 'err');
+            }
         }
         setTimeout(loadTeacherTasks, 700);
     } catch (e) {
@@ -408,8 +520,8 @@ async function deleteTask() {
     if (!confirm('Удалить это задание?')) return;
     document.getElementById('btnDeleteTask').disabled = true;
     try {
-        // POST /teacher/tasks/:id/delete
-        await apiPost(`/teacher/tasks/${editingTaskId}/delete`, {});
+        // POST /teacher/tasks/delete/:id
+        await apiPost(`/teacher/tasks/delete/${editingTaskId}`, {});
         setMsg('taskEditorMsg', 'Задание удалено!', 'ok');
         setTimeout(loadTeacherTasks, 700);
     } catch (e) {
@@ -452,9 +564,10 @@ async function loadStudentTasks() {
 
     try {
         // GET /tasks?
-        // Expected: [ { task_id, title, subject_name, teacher_name,
+        // Expected: [ { id, title, subject, teacher,
         //               report_status, report_grade, group_number } ]
         const tasks = await apiGet('/tasks');
+        console.log('Loaded student tasks:', tasks);
         renderTaskTable(tasks, wrap);
     } catch (e) {
         wrap.innerHTML = `<div class="empty-state">
@@ -482,13 +595,13 @@ function renderTaskTable(tasks, wrap) {
       </tr></thead>
       <tbody>
         ${tasks.map(t => `
-          <tr onclick="openTask(${t.task_id})">
-            <td>${t.task_id}</td>
+          <tr onclick="openTask(${t.id})">
+            <td>${t.id}</td>
             <td><strong>${escHtml(t.title)}</strong></td>
-            <td>${escHtml(t.subject_name || '—')}</td>
-            <td>${escHtml(t.teacher_name || '—')}</td>
-            <td>${t.report_status ? badgeHtml(t.report_status) : '<span class="grade-none">нет ответа</span>'}</td>
-            <td>${t.report_grade != null ? `<span class="grade-badge">${t.report_grade}</span>` : '<span class="grade-none">—</span>'}</td>
+            <td>${escHtml(t.subject || '—')}</td>
+            <td>${escHtml(t.teacher || '—')}</td>
+            <td>${t.report.status ? badgeHtml(t.report.status) : '<span class="grade-none">нет ответа</span>'}</td>
+            <td>${t.report.grade != null ? `<span class="grade-badge">${t.report.grade}</span>` : '<span class="grade-none">—</span>'}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
@@ -508,10 +621,11 @@ async function openTask(taskId) {
 
     try {
         // GET /task
-        // Expected: { task_id, title, description, subject_name, teacher_name,
+        // Expected: { id, title, description, subject, teacher,
         //             group_number, report_id?, report_text?, report_status?, report_grade? }
         const d = await apiGet(`/tasks/${taskId}`);
         state.currentTask = d;
+        console.log('Loaded task detail:', d);
         renderTaskDetail(d, card);
     } catch (e) {
         card.innerHTML = `<div class="empty-state"><p>Не удалось загрузить задание.</p></div>`;
@@ -522,24 +636,24 @@ function renderTaskDetail(d, card) {
     card.innerHTML = `
     <h3>${escHtml(d.title)}</h3>
     <div class="detail-meta">
-      <span>📚 ${escHtml(d.subject_name || '—')}</span>
-      <span>👤 ${escHtml(d.teacher_name || '—')}</span>
+      <span>📚 ${escHtml(d.subject || '—')}</span>
+      <span>👤 ${escHtml(d.teacher || '—')}</span>
       <span>🎓 Группа: ${escHtml(d.group_number || '—')}</span>
-      ${d.report_status ? `<span>${badgeHtml(d.report_status)}</span>` : ''}
-      ${d.report_grade != null ? `<span><span class="grade-badge">${d.report_grade}</span></span>` : ''}
+      ${d.report.status ? `<span>${badgeHtml(d.report.status)}</span>` : ''}
+      ${d.report.grade != null ? `<span><span class="grade-badge">${d.report.grade}</span></span>` : ''}
     </div>
     <div class="detail-body">${escHtml(d.description || '(описание отсутствует)')}</div>`;
 
     // Pre-fill existing answer
-    if (d.report_text) {
-        document.getElementById('reportText').value = d.report_text;
+    if (d.report.text) {
+        document.getElementById('reportText').value = d.report.text;
     }
 
     // Показать/скрыть форму ответа и кнопку "добавить ответ"
     const formWrap = document.getElementById('reportFormWrap');
     const btnSubmit = document.getElementById('btnSubmitReport');
     // Если нет ответа или ответ отклонён — показать кнопку "добавить ответ"
-    if (!d.report_status || d.report_status === 'REJECTED') {
+    if (!d.report.status || d.report.status === 'REJECTED') {
         formWrap.style.display = '';
         // Добавить кнопку, если её нет
         let addBtn = document.getElementById('btnAddReport');
@@ -549,8 +663,8 @@ function renderTaskDetail(d, card) {
             addBtn.className = 'btn-primary';
             addBtn.style = 'margin-top:1rem;';
             addBtn.textContent = 'Добавить ответ';
-            addBtn.onclick = function() {
-                formWrap.scrollIntoView({behavior: 'smooth'});
+            addBtn.onclick = function () {
+                formWrap.scrollIntoView({ behavior: 'smooth' });
                 document.getElementById('reportText').focus();
             };
             formWrap.parentNode.insertBefore(addBtn, formWrap);
