@@ -46,7 +46,7 @@ boost::json::object Task::as_json() {
 
 boost::json::object Report::as_json() {
     boost::json::object obj;
-    obj["status"] = status == ACCEPTED ? "ACCEPTED" : "SENT";
+    obj["status"] = status == ACCEPTED ? "ACCEPTED" : (status == REJECTED ? "REJECTED" : "SENT");
     if (status == ACCEPTED) {
         obj["grade"] = grade;
     }

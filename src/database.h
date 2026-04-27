@@ -12,6 +12,7 @@ using std::vector;
 class Database {
 private:
   pqxx::connection conn;
+  pqxx::work txn;
   bool failed;
 
 public:
@@ -27,10 +28,11 @@ public:
   vector<Task> get_tasks_for(const User &student);
   vector<Task> get_tasks_from(const User &teacher);
   vector<Report> get_reports_for(const User &teacher);
+
   std::optional<Task> get_task(size_t id);
-  void insert_report(Report report);
-  void insert_task(Task task);
-  void update_grade(Report report);
+  bool insert_report(Report report);
+  bool insert_task(Task task);
+  bool update_grade(Report report);
   optional<Report> get_report(size_t id);
   bool fail();
 

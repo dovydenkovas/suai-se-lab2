@@ -44,7 +44,7 @@ public:
 
   void send(boost::json::value response, size_t err = 200);
   void send_error(size_t err);
-  void send_ok();
+  void send_ok(size_t err=200);
 
 private:
   bool parse_body();

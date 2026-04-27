@@ -81,14 +81,14 @@ void Ecampus::login() {
   auto u = db.get_user_by_login(login);
   if (!u.has_value()) {
     BOOST_LOG_TRIVIAL(debug) << "Wrong login name";
-    api.send_error(403);
+    api.send_error(401);
     return;
   }
 
   User user = u.value();
   if (!auth::check_password(password, user.password)) {
     BOOST_LOG_TRIVIAL(debug) << "Wrong password";
-    api.send_error(403);
+    api.send_error(401);
     return;
   }
 
@@ -127,8 +127,7 @@ void Ecampus::show_tasks() {
     res.push_back(task.as_json());
   }
   boost::json::object t;
-  t["tasks"] = res;
-  api.send(t);
+  api.send(res);
 }
 
 /**
@@ -151,7 +150,7 @@ void Ecampus::show_task() {
   }
   Task task = t.value();
   auto task_json = task.as_json();
-  task_json["descriprion"] = task.description;
+  task_json["description"] = task.description;
   task_json["group_number"] = task.group_number;
 
   if (task.report) {
@@ -187,7 +186,8 @@ void Ecampus::show_reports() {
           {"title", task.title},
           {"description", task.description},
       };
-
+      report["text"] = r.text;
+      report["report_id"] = r.id;
       report["subject"] = task.subject;
       report["group"] = task.group_number;
     }
@@ -211,6 +211,7 @@ void Ecampus::add_report() {
 
   size_t task_id = api.get_int("task_id");
   string text = api.get("text");
+  BOOST_LOG_TRIVIAL(debug) << "Adding report for task " << task_id;
 
   auto tasks = db.get_tasks_for(student);
   auto t_it = find_if(tasks.begin(), tasks.end(),
@@ -236,8 +237,10 @@ void Ecampus::add_report() {
   report.text = text;
   report.grade = 0;
   report.status = Report::SENT;
-  db.insert_report(report);
-  api.send_ok();
+  if (db.insert_report(report))
+    api.send_ok(201);
+  else
+    api.send_error(400);
 }
 
 /**
@@ -312,8 +315,10 @@ void Ecampus::grade_report() {
     report.status = Report::SENT;
   }
 
-  db.update_grade(report);
-  api.send_ok();
+  if (db.update_grade(report))
+    api.send_ok(201);
+  else
+    api.send_error(400);
 }
 
 /**
@@ -394,12 +399,14 @@ void Ecampus::add_task() {
   task.id = 0;
   task.group_number = api.get("group_number");
   task.teacher = teacher;
-  task.subject = api.get("subject");
+  task.subject = api.get("subject_name");
   task.title = api.get("title");
   task.description = api.get("description");
   task.report = {};
-  db.insert_task(task);
-  api.send_ok();
+  if (db.insert_task(task))
+    api.send_ok(201);
+  else
+    api.send_error(400);
 }
 
 /**

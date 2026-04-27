@@ -67,16 +67,15 @@ Request ApiHandler::router() {
     string prefix = p->first;
     route_index = p->second;
 
-
-    if (prefix == "/tasks/")
+    if (prefix == "/tasks")
       return TASK_BY_ID;
-    if (prefix == "/reports/") {
+    if (prefix == "/reports") {
       if (header.method == Header::GET)
         return REPORTS_BY_ID;
       else
         return GRADE_REPORT;
     }
-    if (prefix == "/teacher/tasks/") {
+    if (prefix == "/teacher/tasks") {
       return SHOW_TEACHER_TASK;
     }
   }
@@ -85,7 +84,17 @@ Request ApiHandler::router() {
 
 string ApiHandler::get(string key) { return request[key].as_string().c_str(); }
 
-size_t ApiHandler::get_int(string key) { return request[key].as_uint64(); }
+size_t ApiHandler::get_int(string key) {
+  try {
+    return request[key].as_int64();
+  } catch (...) {
+    try {
+      return std::stoi(request[key].as_string().c_str());
+    } catch (...) {
+      throw;
+    }
+  }
+}
 
 size_t ApiHandler::get_route_index() { return route_index; }
 
@@ -112,14 +121,14 @@ void ApiHandler::send_error(size_t err) {
   send(resp, err);
 }
 
-void ApiHandler::send_ok() {
+void ApiHandler::send_ok(size_t err) {
   if (responsed) {
     return;
   }
 
   boost::json::object resp;
   resp["ok"] = true;
-  send(resp);
+  send(resp, err);
 }
 
 string internal::extract_bearer_token(const string &auth_header) {
@@ -135,7 +144,8 @@ string internal::extract_bearer_token(const string &auth_header) {
   return {};
 }
 
-std::optional<std::pair<string, size_t>> internal::try_parse_route(string path) {
+std::optional<std::pair<string, size_t>>
+internal::try_parse_route(string path) {
   BOOST_LOG_TRIVIAL(debug) << "try parse index from route";
   int separator = path.rfind("/");
   string num = path.substr(separator + 1);

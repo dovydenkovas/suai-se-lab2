@@ -32,7 +32,7 @@ struct Report {
   size_t student_id;
   string text;
   size_t grade;
-	enum { SENT, ACCEPTED } status;
+  enum { SENT, ACCEPTED, REJECTED } status;
 
   boost::json::object as_json();
 };
