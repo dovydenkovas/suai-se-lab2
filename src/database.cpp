@@ -338,6 +338,45 @@ bool Database::insert_report(Report report) {
   return true;
 }
 
+vector<Report> Database::get_reports_for(const size_t &task_id) {
+  vector<Report> reports;
+  // pqxx::work txn(conn);
+  pqxx::params p;
+  p.append(task_id);
+
+  const std::string sql =
+      "SELECT r.report_id, r.task_id, r.student_id, r.text, r.status, r.grade, "
+      "st.full_name   AS student_name, "
+      "sub.name       AS subject_name "
+      "FROM report r "
+      "JOIN task tk      ON r.task_id = tk.task_id "
+      "JOIN teacher tr   ON tk.teacher_id = tr.teacher_id "
+      "JOIN student st   ON r.student_id = st.student_id "
+      "JOIN subject sub  ON tk.subject_id = sub.subject_id "
+      "WHERE tk.task_id = $1";
+
+  pqxx::result res = txn.exec(sql, p);
+  for (const auto &row : res) {
+    Report rep;
+    rep.id = row["report_id"].as<size_t>();
+    rep.task_id = row["task_id"].as<size_t>();
+    rep.student_id = row["student_id"].as<size_t>();
+    rep.student_name = row["student_name"].as<string>();
+    rep.text = row["text"].as<string>();
+    rep.status =
+        row["status"].as<string>() == "ACCEPTED"
+            ? Report::ACCEPTED
+            : (row["status"].as<string>() == "REJECTED" ? Report::REJECTED
+                                                        : Report::SENT);
+    rep.grade = row["grade"].is_null() ? 0 : row["grade"].as<int>();
+
+    reports.push_back(std::move(rep));
+  }
+
+  txn.commit();
+  return reports;
+}
+
 bool Database::insert_task(Task task) {
   auto o_gid = get_group_id(task.group_number);
   if (!o_gid) {

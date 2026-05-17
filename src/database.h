@@ -27,6 +27,7 @@ public:
 
   vector<Task> get_tasks_for(const User &student);
   vector<Task> get_tasks_from(const User &teacher);
+  vector<Report> get_reports_for(const size_t &task_id);
   vector<Report> get_reports_for(const User &teacher);
 
   std::optional<Task> get_task(size_t id);

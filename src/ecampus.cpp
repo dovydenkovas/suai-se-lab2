@@ -244,7 +244,7 @@ void Ecampus::add_report() {
 }
 
 /**
- * Role: Teacher      Method: GET      Endpoint: /api/reports/{report_id}
+ * Role: Teacher      Method: GET      Endpoint: /api/reports/{task_id}
  * Headers: token     Request: -
  * Response: {id, task{title, description}, subject, student, group, text,
  * status, grade?} Discription: report page.
@@ -255,35 +255,40 @@ void Ecampus::report_by_id() {
     return;
   }
 
-  auto r = db.get_report(api.get_route_index());
-  if (!r) {
+  auto r = db.get_reports_for(api.get_route_index());
+  if (r.size() == 0) {
     BOOST_LOG_TRIVIAL(warning)
         << "There are no report with index " << api.get_route_index();
     api.send_error(418);
     return;
   }
 
-  Report report = *r;
-  Task task = *db.get_task(report.task_id);
+  boost::json::array res;
+  for (auto report : r) {
 
-  if (task.teacher.id != teacher.id) {
-    BOOST_LOG_TRIVIAL(warning)
-        << "Teacher " << teacher.id << " want to access to task "
-        << task.teacher.full_name << ", but has no perms.";
-    api.send_error(406);
-    return;
+    Task task = *db.get_task(report.task_id);
+
+    if (task.teacher.id != teacher.id) {
+      BOOST_LOG_TRIVIAL(warning)
+          << "Teacher " << teacher.id << " want to access to task "
+          << task.teacher.full_name << ", but has no perms.";
+      api.send_error(406);
+      return;
+    }
+
+    User student = *db.get_student(report.student_id);
+
+    auto jo = report.as_json();
+    jo["id"] = report.id;
+    jo["text"] = report.text;
+    jo["task"] = {{"title", task.title}, {"description", task.description}};
+    jo["subject"] = task.subject;
+    jo["student"] = {{"id", report.student_id},
+                     {"full_name", student.full_name}};
+    jo["group"] = task.group_number;
+    res.push_back(jo);
   }
-
-  User student = *db.get_student(report.student_id);
-
-  auto jo = report.as_json();
-  jo["id"] = report.id;
-  jo["text"] = report.text;
-  jo["task"] = {{"title", task.title}, {"description", task.description}};
-  jo["subject"] = task.subject;
-  jo["student"] = {{"id", report.student_id}, {"full_name", student.full_name}};
-  jo["group"] = task.group_number;
-  api.send(jo);
+  api.send(res);
 }
 
 /**
@@ -312,7 +317,7 @@ void Ecampus::grade_report() {
     report.status = Report::ACCEPTED;
     report.grade = api.get_int("grade");
   } else if (status == "REJECTED") {
-     report.status = Report::REJECTED;
+    report.status = Report::REJECTED;
   } else {
     report.status = Report::SENT;
   }
