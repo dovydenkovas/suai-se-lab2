@@ -1,10 +1,10 @@
-// ═══════════════════════════════════════════════════
+// ==========================
 //  CONFIG  — Change CGI_BASE to your actual endpoint
-// ═══════════════════════════════════════════════════
+// ==========================
 const CGI_BASE = '/cgi-bin/api.cgi';
-const API_PATH = 'http://localhost:1488/proxy';
+const API_PATH = 'http://localhost:8787/proxy';
 // const API_PATH = 'http://atuin.space:8888';
-// ── App state ──
+// App state 
 const state = {
     user: null,
     token: null,
@@ -12,7 +12,6 @@ const state = {
     currentReport: null,
 };
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if token exists in localStorage (for persistent login)
     const savedState = JSON.parse(localStorage.getItem('state') || '{}');
     if (savedState.token) {
         state.user = savedState.user;
@@ -22,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showPage('pageHome');
     }
 });
-// ═══════════════════════════════════════════════════
+// ==========================
 //  UTILITIES
-// ═══════════════════════════════════════════════════
+// ==========================
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -52,44 +51,41 @@ function badgeHtml(status) {
 
 
 
-// ====== MOCK DATA FOR OFFLINE MODE ======
-const mock = {
+// ====== DATA FOR OFFLINE MODE ======
+const offlineData = {
     teacherTasks: [
         { task_id: 1, title: 'Лабораторная 1', subject_name: 'Основы программирования', group_number: 'Б01-001', description: 'Сделать задание 1.' },
         { task_id: 2, title: 'Лабораторная 2', subject_name: 'Основы программирования', group_number: 'Б01-001', description: 'Сделать задание 2.' }
     ],
     studentTasks: [
         { task_id: 1, title: 'Лабораторная 1', subject_name: 'Основы программирования', teacher_name: 'Иван Иванов', report_status: 'SENT', report_grade: null, group_number: 'Б01-001', report_text: 'Мой ответ на ЛР1' },
-        { task_id: 2, title: 'Лабораторная 2', subject_name: 'Основы программирования', teacher_name: 'Иван Иванов', report_status: null, report_grade: null, group_number: 'Б01-001', report_text: '' }
+        { task_id: 2, title: 'Лабораторная 2', subject_name: 'Основы программирования', teacher_name: 'Иван Иванов', report_status: 'REJECTED', report_grade: null, group_number: 'Б01-001', report_text: '' }
     ]
 };
-let mockTaskId = 3;
+let offlineTaskId = 3;
 
-// Переключатель: true — использовать mock, false — реальное API
-let USE_MOCK = false;
+let isOfflineMode = false;
 
 async function apiGet(path) {
-    if (USE_MOCK) {
-        // OFFLINE MOCKS
+    if (isOfflineMode) {
+        // OFFLINE MODE
         if (path === '/teacher/tasks') {
-            return JSON.parse(JSON.stringify(mock.teacherTasks));
+            return JSON.parse(JSON.stringify(offlineData.teacherTasks));
         }
         if (path.startsWith('/teacher/tasks/')) {
             const id = parseInt(path.split('/').pop());
-            return JSON.parse(JSON.stringify(mock.teacherTasks.find(t => t.task_id === id)));
+            return JSON.parse(JSON.stringify(offlineData.teacherTasks.find(t => t.task_id === id)));
         }
         if (path === '/tasks') {
-            return JSON.parse(JSON.stringify(mock.studentTasks));
+            return JSON.parse(JSON.stringify(offlineData.studentTasks));
         }
         if (path.startsWith('/tasks/')) {
             const id = parseInt(path.split('/').pop());
-            // Для детального задания студенту
-            const t = mock.studentTasks.find(t => t.task_id === id);
+            const t = offlineData.studentTasks.find(t => t.task_id === id);
             if (!t) throw new Error('not found');
-            return Object.assign({}, t, { description: mock.teacherTasks.find(tt => tt.task_id === id)?.description });
+            return Object.assign({}, t, { description: offlineData.teacherTasks.find(tt => tt.task_id === id)?.description });
         }
         if (path.startsWith('/reports')) {
-            // Мок для отчётов преподавателя
             return [];
         }
         throw new Error('OFFLINE: Not implemented for ' + path);
@@ -107,19 +103,19 @@ async function apiGet(path) {
 
 async function apiPost(path, data) {
     console.log(data)
-    if (USE_MOCK) {
-        // OFFLINE MOCKS
+    if (isOfflineMode) {
+        // OFFLINE MODE
         if (path === '/teacher/tasks') {
             // create
             const newTask = {
-                task_id: mockTaskId++,
+                task_id: offlineTaskId++,
                 title: data.title,
                 description: data.description,
                 group_number: data.group_number,
                 subject_name: data.subject_name
             };
-            mock.teacherTasks.push(newTask);
-            mock.studentTasks.push({
+            offlineData.teacherTasks.push(newTask);
+            offlineData.studentTasks.push({
                 task_id: newTask.task_id,
                 title: newTask.title,
                 subject_name: newTask.subject_name,
@@ -134,14 +130,14 @@ async function apiPost(path, data) {
         if (path.startsWith('/teacher/tasks/') && !path.endsWith('/delete')) {
             // edit
             const id = parseInt(path.split('/').pop());
-            const t = mock.teacherTasks.find(t => t.task_id === id);
+            const t = offlineData.teacherTasks.find(t => t.task_id === id);
             if (t) {
                 t.title = data.title;
                 t.description = data.description;
                 t.group_number = data.group_number;
                 t.subject_name = data.subject_name;
                 // sync for student
-                const st = mock.studentTasks.find(st => st.task_id === id);
+                const st = offlineData.studentTasks.find(st => st.task_id === id);
                 if (st) {
                     st.title = data.title;
                     st.subject_name = data.subject_name;
@@ -153,8 +149,8 @@ async function apiPost(path, data) {
         if (path.endsWith('/delete')) {
             // delete
             const id = parseInt(path.split('/').slice(-2)[0]);
-            mock.teacherTasks = mock.teacherTasks.filter(t => t.task_id !== id);
-            mock.studentTasks = mock.studentTasks.filter(t => t.task_id !== id);
+            offlineData.teacherTasks = offlineData.teacherTasks.filter(t => t.task_id !== id);
+            offlineData.studentTasks = offlineData.studentTasks.filter(t => t.task_id !== id);
             return { ok: true };
         }
         throw new Error('OFFLINE: Not implemented for ' + path);
@@ -186,24 +182,22 @@ async function apiPost(path, data) {
     }
 }
 
-// ═══════════════════════════════════════════════════
+// ==========================
 //  AUTH
-// ═══════════════════════════════════════════════════
+// ==========================
 async function doLogin() {
     const login = document.getElementById('loginInput').value.trim();
     const password = document.getElementById('passwordInput').value;
 
-    if (login == 1 && password == 1 && USE_MOCK) {
-        // Quick test login for teacher
+    if (login == 1 && password == 1 && isOfflineMode) {
         state.user = { id: 1, full_name: 'Иван Иванов', role: 'teacher' };
-        state.token = 'mock-token-for-teacher';
-        localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
+        state.token = 'offline-token-for-teacher';
+        localStorage.setItem('state', JSON.stringify(state));
     }
-    else if (login == 2 && password == 2 && USE_MOCK) {
-        // Quick test login for student
+    else if (login == 2 && password == 2 && isOfflineMode) {
         state.user = { id: 2, full_name: 'Пётр Петров', role: 'student', group_number: 'Б01-001' };
-        state.token = 'mock-token-for-student';
-        localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
+        state.token = 'offline-token-for-student';
+        localStorage.setItem('state', JSON.stringify(state));
     }
     else {
         try {
@@ -213,7 +207,7 @@ async function doLogin() {
             console.log("respond:");
             console.log(data.status);
             console.log(data.statusLabel);
-            localStorage.setItem('state', JSON.stringify(state)); // For debugging in devtools
+            localStorage.setItem('state', JSON.stringify(state));
         } catch (e) {
             setMsg('authError', 'Неверный логин или пароль.', 'err');
             return;
@@ -233,9 +227,9 @@ function applySession() {
     if (state.user.role === 'student') loadStudentTasks();
     else if (state.user.role === 'teacher') loadTeacherTasks();
 }
-// ═══════════════════════════════════════════════════
+// ==========================
 //  TEACHER — TASKS PAGE
-// ═══════════════════════════════════════════════════
+// ==========================
 async function loadTeacherTasks() {
     showPage('pageTeacherTasks');
     const wrap = document.getElementById('teacherTaskTableWrap');
@@ -279,23 +273,22 @@ function renderTeacherTaskTable(tasks, wrap) {
         </table>`;
 }
 
-// Показывает ответы студентов на задание для преподавателя
+// Students answers page
 async function showTaskAnswers(taskId) {
     showPage('pageTaskDetail');
     const card = document.getElementById('taskDetailCard');
     card.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка…</div>';
     let task = {};
     let answers = [];
-    if (USE_MOCK) {
+    if (isOfflineMode) {
         task = (await apiGet('/teacher/tasks/' + taskId)) || {};
-        answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+        answers = offlineData.studentTasks.filter(s => s.task_id === taskId && s.report_status);
     } else {
         task = await apiGet('/teacher/tasks/' + taskId);
         answers = await apiGet(`/reports?task_id=${taskId}`);
     }
-    // Сохраняем taskId для возврата
     showTaskAnswers._lastTaskId = taskId;
-    // Формируем HTML с выпадающим меню для статуса и полем для оценки
+
     card.innerHTML = `
         <h3>${escHtml(task.title || 'Задание #' + taskId)}</h3>
         <div class="detail-meta">
@@ -306,7 +299,7 @@ async function showTaskAnswers(taskId) {
         <div class="divider"></div>
         <h4>Ответы студентов</h4>
         ${answers.length === 0 ? '<div class="empty-state"><p>Ответов пока нет.</p></div>' :
-                answers.map((a, idx) => `
+            answers.map((a, idx) => `
             <div class="answer-block" style="margin-bottom:1.5rem; line-height: 1.8;">
                 <div style="font-size:0.97rem; margin-bottom: 0.75rem;"><b>${escHtml(a.student?.full_name || a.student_name || 'Студент')}</b> ${a.status ? badgeHtml(a.status) : ''}</div>
                 <div style="margin:0.75rem 0; color:var(--ink-soft); white-space:pre-wrap; line-height: 1.8;">${escHtml(a.text || a.report_text || '(нет текста)')}</div>
@@ -327,11 +320,9 @@ async function showTaskAnswers(taskId) {
             </div>
             `).join('')}
     `;
-    // Скрыть форму ответа для преподавателя
     document.getElementById('reportFormWrap').style.display = 'none';
 }
 
-// Новая функция для применения изменений при нажатии кнопки
 window.onApplyAnswerChange = async function (taskId, idx) {
     const statusSelect = document.getElementById(`statusSelect_${idx}`);
     const gradeInput = document.getElementById(`gradeInput_${idx}`);
@@ -343,23 +334,20 @@ window.onApplyAnswerChange = async function (taskId, idx) {
         return;
     }
 
-    if (USE_MOCK) {
-        // В mock-режиме меняем статус и оценку в mock.studentTasks
-        let answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+    if (isOfflineMode) {
+        let answers = offlineData.studentTasks.filter(s => s.task_id === taskId && s.report_status);
         if (answers[idx]) {
             answers[idx].report_status = newStatus;
             answers[idx].report_grade = newGrade;
         }
-        // Перерисовать
         showTaskAnswers(taskId);
     } else {
-        // В реальном API — отправить POST /api/reports/{report_id} {status, grade}
+        // send POST /api/reports/{report_id} {status, grade}
         const answers = await apiGet(`/reports?task_id=${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             const resp = await apiPost(`/reports/${answer.report_id}`, { status: newStatus, grade: newGrade });
             console.log('Update report response:', resp);
-            // Перерисовать
             showTaskAnswers(taskId);
         }
         else {
@@ -368,74 +356,60 @@ window.onApplyAnswerChange = async function (taskId, idx) {
     }
 }
 
-// Обработчик изменения статуса ответа
 window.onChangeAnswerStatus = async function (taskId, idx, newStatus) {
     const gradeInput = document.getElementById(`gradeInput_${idx}`);
     const grade = gradeInput ? gradeInput.value : null;
-    if (USE_MOCK) {
-        // В mock-режиме меняем статус и оценку в mock.studentTasks
-        const answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+    if (isOfflineMode) {
+        const answers = offlineData.studentTasks.filter(s => s.task_id === taskId && s.report_status);
         if (answers[idx]) {
             answers[idx].report_status = newStatus;
             answers[idx].report_grade = grade;
         }
-        // Перерисовать
         showTaskAnswers(taskId);
     } else {
-        // В реальном API — отправить POST /api/reports/{report_id} {status, grade}
-        // Нужно знать report_id, предполагаем что answers[idx].report_id есть
+        // send POST /api/reports/{report_id} {status, grade}
         const answers = await apiGet(`/reports?task_id=${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             await apiPost(`/reports/${answer.report_id}`, { status: newStatus, grade: grade });
-            // Перерисовать
             showTaskAnswers(taskId);
         }
     }
 }
 
-// Обработчик изменения оценки
 window.onChangeGrade = async function (taskId, idx, newGrade) {
     const statusSelect = document.getElementById(`statusSelect_${idx}`);
     const status = statusSelect ? statusSelect.value : null;
-    if (USE_MOCK) {
-        // В mock-режиме меняем оценку в mock.studentTasks
-        const answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+    if (isOfflineMode) {
+        const answers = offlineData.studentTasks.filter(s => s.task_id === taskId && s.report_status);
         if (answers[idx]) {
             answers[idx].report_grade = newGrade;
         }
-        // Перерисовать
         showTaskAnswers(taskId);
     } else {
-        // В реальном API — отправить POST /api/reports/{report_id} {status, grade}
+        // send POST /api/reports/{report_id} {status, grade}
         const answers = await apiGet(`/reports?task_id=${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             await apiPost(`/reports/${answer.report_id}`, { status: status, grade: newGrade });
-            // Перерисовать
             showTaskAnswers(taskId);
         }
     }
 }
 
-// Обработчик изменения статуса ответа
 window.onChangeAnswerStatus = async function (taskId, idx, newStatus) {
-    if (USE_MOCK) {
-        // В mock-режиме меняем статус в mock.studentTasks
-        const answers = mock.studentTasks.filter(s => s.task_id === taskId && s.report_status);
+    if (isOfflineMode) {
+        const answers = offlineData.studentTasks.filter(s => s.task_id === taskId && s.report_status);
         if (answers[idx]) {
             answers[idx].report_status = newStatus;
         }
-        // Перерисовать
         showTaskAnswers(taskId);
     } else {
-        // В реальном API — отправить POST /api/reports/{report_id} {status}
-        // Нужно знать report_id, предполагаем что answers[idx].report_id есть
+        // send POST /api/reports/{report_id} {status}
         const answers = await apiGet(`/reports?task_id=${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             await apiPost(`/reports/${answer.report_id}`, { status: newStatus });
-            // Перерисовать
             showTaskAnswers(taskId);
         }
     }
@@ -544,14 +518,13 @@ function doLogout() {
     showPage('pageHome');
 }
 
-// Enter key on password field
 document.getElementById('passwordInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
 });
 
-// ═══════════════════════════════════════════════════
+// ==========================
 //  STUDENT — TASK LIST
-// ═══════════════════════════════════════════════════
+// ==========================
 async function loadStudentTasks() {
     showPage('pageStudentTasks');
     const wrap = document.getElementById('taskTableWrap');
@@ -570,6 +543,7 @@ async function loadStudentTasks() {
         console.log('Loaded student tasks:', tasks);
         renderTaskTable(tasks, wrap);
     } catch (e) {
+        console.error('Error loading student tasks:', e);
         wrap.innerHTML = `<div class="empty-state">
       <div class="es-icon">⚠</div>
       <p>Не удалось загрузить задания. Проверьте соединение.</p></div>`;
@@ -607,9 +581,9 @@ function renderTaskTable(tasks, wrap) {
     </table>`;
 }
 
-// ═══════════════════════════════════════════════════
+// ==========================
 //  STUDENT — TASK DETAIL
-// ═══════════════════════════════════════════════════
+// ==========================
 async function openTask(taskId) {
     state.currentTask = { task_id: taskId };
     showPage('pageTaskDetail');
@@ -644,19 +618,15 @@ function renderTaskDetail(d, card) {
     </div>
     <div class="detail-body">${escHtml(d.description || '(описание отсутствует)')}</div>`;
 
-    // Pre-fill existing answer
     if (d.report.text) {
         document.getElementById('reportText').value = d.report.text;
     }
 
-    // Показать/скрыть форму ответа и кнопку "добавить ответ"
     const formWrap = document.getElementById('reportFormWrap');
     const btnSubmit = document.getElementById('btnSubmitReport');
-    // Если нет ответа или ответ отклонён — показать кнопку "добавить ответ"
     if (!d.report.status || d.report.status === 'REJECTED') {
         formWrap.style.display = '';
-        // Добавить кнопку, если её нет
-        let addBtn = document.getElementById('btnAddReport');
+        // let addBtn = document.getElementById('btnAddReport');
         if (!addBtn) {
             addBtn = document.createElement('button');
             addBtn.id = 'btnAddReport';
@@ -672,7 +642,6 @@ function renderTaskDetail(d, card) {
             addBtn.style.display = '';
         }
     } else {
-        // Если ответ уже отправлен и не отклонён — скрыть форму и кнопку
         formWrap.style.display = 'none';
         let addBtn = document.getElementById('btnAddReport');
         if (addBtn) addBtn.style.display = 'none';
@@ -687,16 +656,14 @@ async function submitReport() {
     btn.disabled = true;
     btn.textContent = 'Отправка…';
     try {
-        if (USE_MOCK) {
-            // Найти задание студента и обновить ответ
-            const st = mock.studentTasks.find(t => t.task_id === state.currentTask.task_id || t.task_id === state.currentTask.id);
+        if (isOfflineMode) {
+            const st = offlineData.studentTasks.find(t => t.task_id === state.currentTask.task_id || t.task_id === state.currentTask.id);
             if (st) {
                 st.report_text = text;
                 st.report_status = 'SENT';
                 st.report_grade = null;
             }
             setMsg('reportMsg', 'Ответ успешно отправлен! (тестовый режим)', 'ok');
-            // Перерисовать детальную страницу задания
             setTimeout(() => openTask(st.task_id), 700);
         } else {
             // POST /reports  { task_id, text }
@@ -715,9 +682,9 @@ async function submitReport() {
     }
 }
 
-// ═══════════════════════════════════════════════════
+// ==========================
 //  TEACHER — REPORT LIST
-// ═══════════════════════════════════════════════════
+// ==========================
 async function loadTeacherReports() {
     showPage('pageTeacherReports');
     const wrap = document.getElementById('reportTableWrap');
@@ -772,9 +739,9 @@ function renderReportTable(reports, wrap) {
     </table>`;
 }
 
-// ═══════════════════════════════════════════════════
+// ==========================
 //  TEACHER — REPORT DETAIL
-// ═══════════════════════════════════════════════════
+// ==========================
 async function openReport(reportId) {
     state.currentReport = { report_id: reportId };
     showPage('pageReportDetail');
@@ -813,7 +780,6 @@ function renderReportDetail(d, card) {
     <div style="font-size:0.88rem; color:var(--ink-faint); margin-bottom:0.5rem; font-weight:600; letter-spacing:0.03em; text-transform:uppercase;">Ответ студента</div>
     <div class="detail-body">${escHtml(d.text || '(ответ отсутствует)')}</div>`;
 
-    // Pre-fill form
     document.getElementById('gradeInput').value = d.grade ?? '';
     document.getElementById('statusSelect').value = d.status ?? 'SENT';
 }
@@ -828,8 +794,7 @@ async function saveReportGrade() {
             status,
             grade
         });
-        setMsg('gradeMsg', 'Сохранено успешно!', 'ok');
-        // Update displayed badge
+        setMsg('gradeMsg', 'Сохранено!', 'ok');
         const card = document.getElementById('reportDetailCard');
         const badgeEl = card.querySelector('.badge');
         if (badgeEl) {
@@ -841,9 +806,9 @@ async function saveReportGrade() {
     }
 }
 
-// ═══════════════════════════════════════════════════
+// ==========================
 //  OTHER FUNCTIONS
-// ═══════════════════════════════════════════════════
+// ==========================
 function escHtml(s) {
     if (s == null) return '';
     return String(s)

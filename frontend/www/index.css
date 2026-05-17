@@ -1,4 +1,3 @@
-/* ── CSS Variables ── */
         :root {
             --bg: #f5f0e8;
             --surface: #fdfaf4;
@@ -25,7 +24,7 @@
             --transition: 0.22s cubic-bezier(.4, 0, .2, 1);
         }
 
-        /* ── Reset & Base ── */
+        /* Reset & Base */
         *,
         *::before,
         *::after {
@@ -50,7 +49,7 @@
             background-position: center;
         }
 
-        /* ── Page Sections ── */
+        /* Page Sections */
         .page {
             display: none;
             min-height: 100vh;
@@ -61,7 +60,7 @@
             display: flex;
         }
 
-        /* ── Header ── */
+        /* Header */
         header {
             background: var(--accent);
             color: #fff;
@@ -108,7 +107,7 @@
             font-family: var(--font-body);
         }
 
-        /* ── Auth Form ── */
+        /* Auth Form */
         .auth-bar {
             display: flex;
             align-items: center;
@@ -183,7 +182,7 @@
             white-space: nowrap;
         }
 
-        /* ── Main Content ── */
+        /* Main Content */
         main {
             flex: 1;
             padding: 2.5rem 2.5rem;
@@ -192,7 +191,7 @@
             margin: 0 auto;
         }
 
-        /* ── Welcome Screen ── */
+        /* Welcome Screen */
         .welcome-screen {
             display: flex;
             flex-direction: column;
@@ -225,7 +224,7 @@
             margin: 0.5rem auto;
         }
 
-        /* ── Section Headers ── */
+        /* Section Headers */
         .section-header {
             display: flex;
             align-items: baseline;
@@ -248,7 +247,7 @@
             font-style: italic;
         }
 
-        /* ── Table ── */
+        /* Table */
         .table-wrap {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -303,7 +302,7 @@
             font-weight: 600;
         }
 
-        /* ── Status Badge ── */
+        /* Status Badge */
         .badge {
             display: inline-block;
             padding: 0.22em 0.75em;
@@ -328,7 +327,7 @@
             color: var(--rejected-fg);
         }
 
-        /* ── Detail Cards ── */
+        /* Detail Cards */
         .back-btn {
             display: inline-flex;
             align-items: center;
@@ -396,7 +395,7 @@
             margin-top: 1rem;
         }
 
-        /* ── Answer / Grade Form ── */
+        /* Answer / Grade Form */
         .form-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -505,7 +504,7 @@
             transform: none;
         }
 
-        /* ── Feedback messages ── */
+        /* Feedback messages */
         .msg {
             padding: 0.75rem 1rem;
             border-radius: var(--radius);
@@ -530,7 +529,7 @@
             border-left: 3px solid var(--rejected-fg);
         }
 
-        /* ── Loading ── */
+        /* Loading */
         .loading {
             text-align: center;
             padding: 3rem;
@@ -557,7 +556,7 @@
             }
         }
 
-        /* ── Empty state ── */
+        /* Empty state */
         .empty-state {
             text-align: center;
             padding: 3.5rem 2rem;
@@ -574,14 +573,14 @@
             font-size: 0.95rem;
         }
 
-        /* ── Decorative divider ── */
+        /* Decorative divider */
         .divider {
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--border), transparent);
             margin: 1.75rem 0;
         }
 
-        /* ── Grade display ── */
+        /* Grade display */
         .grade-badge {
             display: inline-flex;
             align-items: center;
@@ -603,7 +602,7 @@
             font-size: 0.88rem;
         }
 
-        /* ── Responsive ── */
+        /* Responsive */
         @media (max-width: 700px) {
             header {
                 padding: 0 1rem;

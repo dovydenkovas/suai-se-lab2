@@ -1,13 +1,13 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const app = express();
-const port = 1488;
+const port = 8787;
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
 app.use(express.static('www'));
 
-// Проксирование всех запросов с /proxy на http://atuin.space:8888
+// proxy to http://atuin.space:8888
 app.use('/proxy', createProxyMiddleware({
     target: 'http://atuin.space:8888',
     changeOrigin: true,
