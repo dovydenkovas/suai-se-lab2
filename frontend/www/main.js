@@ -2,8 +2,8 @@
 //  CONFIG  — Change CGI_BASE to your actual endpoint
 // ==========================
 const CGI_BASE = '/cgi-bin/api.cgi';
-const API_PATH = 'http://localhost:8787/proxy';
-// const API_PATH = 'http://atuin.space:8888';
+// const API_PATH = 'http://localhost:8787/proxy';
+const API_PATH = 'http://atuin.space:8888';
 // App state 
 const state = {
     user: null,
