@@ -153,9 +153,13 @@ void Ecampus::show_task() {
   task_json["description"] = task.description;
   task_json["group_number"] = task.group_number;
 
-  if (task.report) {
-    task_json["report"].as_object()["id"] = task.report->id;
-    task_json["report"].as_object()["text"] = task.report->text;
+  auto reports = db.get_reports_of(task.id, student.id);
+  // boost::json::array reps;
+  for (auto r : reports) {
+    auto r_json = r.as_json();
+    r_json["text"] = r.text;
+    // reps.push_back(r_json);
+    task_json["report"] = r_json;
   }
 
   api.send(task_json);
