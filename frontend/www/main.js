@@ -568,15 +568,18 @@ function renderTaskTable(tasks, wrap) {
         <th>Оценка</th>
       </tr></thead>
       <tbody>
-        ${tasks.map(t => `
+        ${tasks.map(t => {
+            const report = t.report || {};
+            return `
           <tr onclick="openTask(${t.id})">
             <td>${t.id}</td>
             <td><strong>${escHtml(t.title)}</strong></td>
             <td>${escHtml(t.subject || '—')}</td>
             <td>${escHtml(t.teacher || '—')}</td>
-            <td>${t.report.status ? badgeHtml(t.report.status) : '<span class="grade-none">нет ответа</span>'}</td>
-            <td>${t.report.grade != null ? `<span class="grade-badge">${t.report.grade}</span>` : '<span class="grade-none">—</span>'}</td>
-          </tr>`).join('')}
+            <td>${report.status ? badgeHtml(report.status) : '<span class="grade-none">нет ответа</span>'}</td>
+            <td>${report.grade != null ? `<span class="grade-badge">${report.grade}</span>` : '<span class="grade-none">—</span>'}</td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>`;
 }
@@ -607,24 +610,24 @@ async function openTask(taskId) {
 }
 
 function renderTaskDetail(d, card) {
+    const report = d.report || {};
     card.innerHTML = `
     <h3>${escHtml(d.title)}</h3>
     <div class="detail-meta">
       <span>📚 ${escHtml(d.subject || '—')}</span>
       <span>👤 ${escHtml(d.teacher || '—')}</span>
       <span>🎓 Группа: ${escHtml(d.group_number || '—')}</span>
-      ${d.report.status ? `<span>${badgeHtml(d.report.status)}</span>` : ''}
-      ${d.report.grade != null ? `<span><span class="grade-badge">${d.report.grade}</span></span>` : ''}
+      ${report.status ? `<span>${badgeHtml(report.status)}</span>` : ''}
+      ${report.grade != null ? `<span><span class="grade-badge">${report.grade}</span></span>` : ''}
     </div>
     <div class="detail-body">${escHtml(d.description || '(описание отсутствует)')}</div>`;
 
-    if (d.report.text) {
-        document.getElementById('reportText').value = d.report.text;
+    if (report.text) {
+        document.getElementById('reportText').value = report.text;
     }
 
     const formWrap = document.getElementById('reportFormWrap');
-    const btnSubmit = document.getElementById('btnSubmitReport');
-    if (!d.report.status || d.report.status === 'REJECTED') {
+    if (!report.status || report.status === 'REJECTED') {
         formWrap.style.display = '';
         // let addBtn = document.getElementById('btnAddReport');
         if (!addBtn) {
