@@ -425,7 +425,7 @@ async function openTaskEditor() {
     document.getElementById('taskDescInput').value = '';
     document.getElementById('taskGroupInput').value = '';
     document.getElementById('taskSubjectInput').value = '';
-    document.getElementById('btnDeleteTask').style.display = 'none';
+    // document.getElementById('btnDeleteTask').style.display = 'none';
     document.getElementById('taskEditorMsg').className = 'msg';
     document.getElementById('taskEditorMsg').textContent = '';
     showPage('pageTaskEditor');
@@ -435,7 +435,7 @@ async function editTask(taskId) {
     editingTaskId = taskId;
     showPage('pageTaskEditor');
     document.getElementById('taskEditorTitle').textContent = 'Редактировать задание';
-    document.getElementById('btnDeleteTask').style.display = 'inline-block';
+    // document.getElementById('btnDeleteTask').style.display = 'inline-block';
     document.getElementById('taskEditorMsg').className = 'msg';
     document.getElementById('taskEditorMsg').textContent = '';
     try {
