@@ -74,11 +74,11 @@ CREATE TABLE report (
 	text TEXT NOT NULL DEFAULT '',
 	status report_status NOT NULL DEFAULT 'SENT',
 	grade INT,
-	CONSTRAINT chk_report_grade 
+	CONSTRAINT chk_report_grade
 		CHECK (
 			(status != 'ACCEPTED' AND grade IS NULL)
 			OR
-			(status != 'ACCEPTED' AND grade BETWEEN 1 AND 5)
+			(status == 'ACCEPTED' AND grade BETWEEN 1 AND 5)
 		),
 	CONSTRAINT fk_report_task
 		FOREIGN KEY (task_id)
