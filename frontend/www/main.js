@@ -629,21 +629,6 @@ function renderTaskDetail(d, card) {
     const formWrap = document.getElementById('reportFormWrap');
     if (!report.status || report.status === 'REJECTED') {
         formWrap.style.display = '';
-        // let addBtn = document.getElementById('btnAddReport');
-        if (!addBtn) {
-            addBtn = document.createElement('button');
-            addBtn.id = 'btnAddReport';
-            addBtn.className = 'btn-primary';
-            addBtn.style = 'margin-top:1rem;';
-            addBtn.textContent = 'Добавить ответ';
-            addBtn.onclick = function () {
-                formWrap.scrollIntoView({ behavior: 'smooth' });
-                document.getElementById('reportText').focus();
-            };
-            formWrap.parentNode.insertBefore(addBtn, formWrap);
-        } else {
-            addBtn.style.display = '';
-        }
     } else {
         formWrap.style.display = 'none';
         let addBtn = document.getElementById('btnAddReport');
