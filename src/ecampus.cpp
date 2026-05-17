@@ -311,6 +311,8 @@ void Ecampus::grade_report() {
   if (status == "ACCEPTED") {
     report.status = Report::ACCEPTED;
     report.grade = api.get_int("grade");
+  } else if (status == "REJECTED") {
+     report.status = Report::REJECTED;
   } else {
     report.status = Report::SENT;
   }

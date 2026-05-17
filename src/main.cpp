@@ -49,7 +49,7 @@ int main() {
     api.send_error(501);
     return 0;
   } catch (...) {
-    BOOST_LOG_TRIVIAL(error) << "Some critical shit was happened";
+    BOOST_LOG_TRIVIAL(error) << "Some critical s**t was happened";
     api.send_error(501);
     return 0;
   }
