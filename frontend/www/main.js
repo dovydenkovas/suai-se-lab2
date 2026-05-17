@@ -285,7 +285,7 @@ async function showTaskAnswers(taskId) {
         answers = offlineData.studentTasks.filter(s => s.task_id === taskId && s.report_status);
     } else {
         task = await apiGet('/teacher/tasks/' + taskId);
-        answers = await apiGet(`/reports?task_id=${taskId}`);
+        answers = await apiGet(`/reports/${taskId}`);
     }
     showTaskAnswers._lastTaskId = taskId;
 
@@ -343,7 +343,7 @@ window.onApplyAnswerChange = async function (taskId, idx) {
         showTaskAnswers(taskId);
     } else {
         // send POST /api/reports/{report_id} {status, grade}
-        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answers = await apiGet(`/reports/${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             const resp = await apiPost(`/reports/${answer.report_id}`, { status: newStatus, grade: newGrade });
@@ -368,7 +368,7 @@ window.onChangeAnswerStatus = async function (taskId, idx, newStatus) {
         showTaskAnswers(taskId);
     } else {
         // send POST /api/reports/{report_id} {status, grade}
-        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answers = await apiGet(`/reports/${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             await apiPost(`/reports/${answer.report_id}`, { status: newStatus, grade: grade });
@@ -388,7 +388,7 @@ window.onChangeGrade = async function (taskId, idx, newGrade) {
         showTaskAnswers(taskId);
     } else {
         // send POST /api/reports/{report_id} {status, grade}
-        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answers = await apiGet(`/reports/${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             await apiPost(`/reports/${answer.report_id}`, { status: status, grade: newGrade });
@@ -406,7 +406,7 @@ window.onChangeAnswerStatus = async function (taskId, idx, newStatus) {
         showTaskAnswers(taskId);
     } else {
         // send POST /api/reports/{report_id} {status}
-        const answers = await apiGet(`/reports?task_id=${taskId}`);
+        const answers = await apiGet(`/reports/${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
             await apiPost(`/reports/${answer.report_id}`, { status: newStatus });
