@@ -256,7 +256,7 @@ function renderTeacherTaskTable(tasks, wrap) {
                 <th>Название</th>
                 <th>Группа</th>
                 <th>Предмет</th>
-                <th>Действия</th>
+                // <th>Действия</th>
             </tr></thead>
             <tbody>
                 ${tasks.map(t => `
@@ -265,9 +265,9 @@ function renderTeacherTaskTable(tasks, wrap) {
                         <td><a href="#" onclick="showTaskAnswers(${t.task_id});return false;">${escHtml(t.title)}</a></td>
                         <td>${escHtml(t.group_number || '—')}</td>
                         <td>${escHtml(t.subject_name || '—')}</td>
-                        <td>
-                            <button class="btn-primary" onclick="editTask(${t.task_id})">Редактировать</button>
-                        </td>
+                        // <td>
+                            // <button class="btn-primary" onclick="editTask(${t.task_id})">Редактировать</button>
+                        // </td>
                     </tr>`).join('')}
             </tbody>
         </table>`;
