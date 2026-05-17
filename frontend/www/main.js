@@ -342,7 +342,7 @@ window.onApplyAnswerChange = async function (taskId, idx) {
         }
         showTaskAnswers(taskId);
     } else {
-        // send POST /api/reports/{report_id} {status, grade}
+        // send POST /api/reports/{taskId} {status, grade}
         const answers = await apiGet(`/reports/${taskId}`);
         const answer = answers[idx];
         if (answer && answer.report_id) {
@@ -685,107 +685,6 @@ async function submitReport() {
     }
 }
 
-// ==========================
-//  TEACHER — REPORT LIST
-// ==========================
-async function loadTeacherReports() {
-    showPage('pageTeacherReports');
-    const wrap = document.getElementById('reportTableWrap');
-    wrap.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка отчётов…</div>';
-    document.getElementById('teacherNameLabel').textContent = state.user.full_name;
-
-    try {
-        // GET /reports
-        // Expected: [ { report_id, task_id, task_title, subject_name,
-        //               student_name, group_number, status, grade } ]
-        const reports = await apiGet('/reports');
-        renderReportTable(reports, wrap);
-    } catch (e) {
-        wrap.innerHTML = `<div class="empty-state">
-      <div class="es-icon">⚠</div>
-      <p>Не удалось загрузить отчёты.</p></div>`;
-    }
-}
-
-function renderReportTable(reports, wrap) {
-    if (!reports.length) {
-        wrap.innerHTML = `<div class="empty-state">
-      <div class="es-icon">📂</div>
-      <p>Отчётов пока нет.</p></div>`;
-        return;
-    }
-    wrap.innerHTML = `
-    <table>
-      <thead><tr>
-        <th>#</th>
-        <th>Студент</th>
-        <th>Группа</th>
-        <th>Задание</th>
-        <th>Предмет</th>
-        <th>Статус</th>
-        <th>Оценка</th>
-      </tr></thead>
-      <tbody>
-        ${reports.map(r => `
-          <tr onclick="openReport(${r.report_id})">
-            <td>${r.report_id}</td>
-            <td><strong>${escHtml(r.student_name || '—')}</strong></td>
-            <td>${escHtml(r.group_number || '—')}</td>
-            <td>${escHtml(r.task_title || '—')}</td>
-            <td>${escHtml(r.subject_name || '—')}</td>
-            <td>${badgeHtml(r.status)}</td>
-            <td>${r.grade != null
-            ? `<span class="grade-badge">${r.grade}</span>`
-            : '<span class="grade-none">—</span>'}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>`;
-}
-
-// ==========================
-//  TEACHER — REPORT DETAIL
-// ==========================
-async function openReport(reportId) {
-    state.currentReport = { report_id: reportId };
-    showPage('pageReportDetail');
-
-    const card = document.getElementById('reportDetailCard');
-    card.innerHTML = '<div class="loading"><span class="spinner"></span> Загрузка…</div>';
-    document.getElementById('gradeMsg').className = 'msg';
-
-    try {
-        // GET /report?report_id=X
-        // Expected: { report_id, task_id, task_title, task_description,
-        //             subject_name, student_name, group_number,
-        //             text, status, grade }
-        const d = await apiGet(`/reports/${reportId}`);
-        state.currentReport = d;
-        renderReportDetail(d, card);
-    } catch (e) {
-        card.innerHTML = `<div class="empty-state"><p>Не удалось загрузить отчёт.</p></div>`;
-    }
-}
-
-function renderReportDetail(d, card) {
-    card.innerHTML = `
-    <h3>${escHtml(d.task_title || 'Отчёт #' + d.report_id)}</h3>
-    <div class="detail-meta">
-      <span>📚 ${escHtml(d.subject_name || '—')}</span>
-      <span>👤 ${escHtml(d.student_name || '—')}</span>
-      <span>🎓 ${escHtml(d.group_number || '—')}</span>
-      <span>${badgeHtml(d.status)}</span>
-      ${d.grade != null ? `<span>Оценка: <span class="grade-badge">${d.grade}</span></span>` : ''}
-    </div>
-    ${d.task_description ? `
-      <div style="font-size:0.88rem; color:var(--ink-faint); margin-bottom:0.5rem; font-weight:600; letter-spacing:0.03em; text-transform:uppercase;">Текст задания</div>
-      <div style="font-size:0.93rem; color:var(--ink-soft); background:var(--bg); border-radius:var(--radius); padding:0.85rem 1rem; margin-bottom:1rem; border:1px solid var(--border); line-height:1.65; white-space:pre-wrap;">${escHtml(d.task_description)}</div>
-    ` : ''}
-    <div style="font-size:0.88rem; color:var(--ink-faint); margin-bottom:0.5rem; font-weight:600; letter-spacing:0.03em; text-transform:uppercase;">Ответ студента</div>
-    <div class="detail-body">${escHtml(d.text || '(ответ отсутствует)')}</div>`;
-
-    document.getElementById('gradeInput').value = d.grade ?? '';
-    document.getElementById('statusSelect').value = d.status ?? 'SENT';
-}
 
 async function saveReportGrade() {
     const grade = document.getElementById('gradeInput').value;
