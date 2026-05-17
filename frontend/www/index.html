@@ -81,53 +81,6 @@
         </main>
     </div>
 
-    <!---------- TEACHER: REPORT LIST ---------->
-    <div class="page" id="pageTeacherReports">
-        <main>
-            <div class="section-header">
-                <h2>Отчёты студентов</h2>
-                <span class="section-subtitle" id="teacherNameLabel"></span>
-            </div>
-            <div id="reportTableWrap" class="table-wrap">
-                <div class="loading"><span class="spinner"></span> Загрузка отчётов…</div>
-            </div>
-        </main>
-    </div>
-
-    <!---------- TEACHER: REPORT DETAIL ---------->
-    <div class="page" id="pageReportDetail">
-        <main>
-            <button class="back-btn" onclick="showPage('pageTeacherReports')">Назад к отчётам</button>
-
-            <div class="detail-card" id="reportDetailCard">
-                <div class="loading"><span class="spinner"></span> Загрузка…</div>
-            </div>
-
-            <div class="form-card">
-                <h4>Оценка и статус</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="gradeInput">Оценка (1–5)</label>
-                        <input type="number" id="gradeInput" min="1" max="5" placeholder="—">
-                    </div>
-                    <div class="form-group">
-                        <label for="statusSelect">Статус</label>
-                        <select id="statusSelect">
-                            <option value="SENT">Отправлен</option>
-                            <option value="ACCEPTED">Принят</option>
-                            <option value="REJECTED">Отклонён</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="flex:0;">
-                        <label>&nbsp;</label>
-                        <button class="btn-primary" onclick="saveReportGrade()">Сохранить</button>
-                    </div>
-                </div>
-                <div class="msg" id="gradeMsg"></div>
-            </div>
-        </main>
-    </div>
-
     <!---------- TEACHER: TASKS PAGE ---------->
     <div class="page" id="pageTeacherTasks">
         <main>
