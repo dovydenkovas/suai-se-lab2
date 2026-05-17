@@ -78,7 +78,7 @@ CREATE TABLE report (
 		CHECK (
 			(status != 'ACCEPTED' AND grade IS NULL)
 			OR
-			(status == 'ACCEPTED' AND grade BETWEEN 1 AND 5)
+			(status = 'ACCEPTED' AND grade BETWEEN 1 AND 5)
 		),
 	CONSTRAINT fk_report_task
 		FOREIGN KEY (task_id)
